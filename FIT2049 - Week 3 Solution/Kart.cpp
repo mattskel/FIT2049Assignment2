@@ -44,10 +44,27 @@ void Kart::Update(float timestep) {
 }
 
 void Kart::OnKartCollisionEnter(Kart* other) {
-	OutputDebugString("Kart Collision Enter\n");
+	//OutputDebugString("Kart Collision Enter\n");
+	//m_frictionAmount = 100.0f;
+
+	// Get the vector between the two colliding objects
+	Vector3 collisionVector = other->GetPosition() - GetPosition();
+	// Get the vector length
+	float vectorLength = collisionVector.Length();
+	Vector3 normalCollisionVector = Vector3(collisionVector.x / vectorLength,
+		collisionVector.y / vectorLength,
+		collisionVector.z / vectorLength);
+
+	Vector3 worldForward = Vector3(0, 0, -1);
+
+	Matrix heading = Matrix::CreateRotationY(m_rotY);
+	Vector3 localForward = Vector3::TransformNormal(worldForward, heading);
+
+	ApplyForce(localForward * m_moveSpeed);
 }
 void Kart::OnKartCollisionStay(Kart* other) {
 	OutputDebugString("Kart Collision Stay\n");
+	//m_frictionAmount = 4.0f;
 }
 void Kart::OnKartCollisionExit(Kart* other) {
 	OutputDebugString("Kart Collision Exit\n");
