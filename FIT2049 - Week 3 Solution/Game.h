@@ -54,9 +54,14 @@ private:
 	std::vector<Kart*> m_karts;
 	std::vector<ItemBox*> m_itemBoxes;
 
+	Kart* m_playerKart;
+
 	SpriteBatch* m_spriteBatch;
 	SpriteFont* m_arialFont12;
 	SpriteFont* m_arialFont18;
+
+	Texture* m_currentItemSprite;
+	const char* m_currentItem;
 
 	Shader* m_unlitShader;
 	Shader* m_texturedShader;
@@ -64,6 +69,9 @@ private:
 	// The menu screen will display two buttons
 	Button* m_startButton;
 	Button* m_quitButton;
+
+	// Array to hold icon sprites
+	std::vector<const char*> m_currentItemArray;
 
 	// Splitting initialisation up into several steps
 	void InitStates();

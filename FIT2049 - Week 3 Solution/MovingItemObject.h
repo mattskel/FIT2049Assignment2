@@ -1,0 +1,34 @@
+#ifndef MOVING_ITEM_OBJECT_H
+#define MOVING_ITEM_OBJECT_H
+
+#include "PhysicsObject.h"
+
+class MovingItemObject : PhysicsObject {
+
+private:
+
+	float m_moveSpeed;
+	CBoundingBox m_boundingBox;
+
+	Vector3 currentDirection;
+
+public:
+
+	MovingItemObject(Mesh* mesh,
+		Shader* shader,
+		Texture* texture,
+		Vector3 position,
+		Vector3 direction);
+
+	void Update(float timestep);
+
+	CBoundingBox GetBounds() { return m_boundingBox; }
+
+	Vector3 GetLocalForward();
+
+	void OnObjectCollisionEnter();
+	void OnObjectCollisionStay();
+	void OnObjectCollisionExit();
+};
+
+#endif

@@ -1,4 +1,5 @@
 #include "ItemBox.h"
+#include "Kart.h"
 
 ItemBox::ItemBox(Mesh* mesh,
 	Shader* shader,
@@ -10,6 +11,7 @@ ItemBox::ItemBox(Mesh* mesh,
 	position) {
 	m_boundingBox = CBoundingBox(GetPosition() + m_mesh->GetMin(),
 		GetPosition() + m_mesh->GetMax());
+	itemValue = std::rand() % 2;
 }
 
 void ItemBox::Update(float timestep) {
@@ -17,7 +19,8 @@ void ItemBox::Update(float timestep) {
 }
 
 void ItemBox::OnKartCollisionEnter(Kart* other) {
-	OutputDebugString("Collision Enter\n");
+	other->SetItemValue(itemValue);
+	itemValue = std::rand() % 2;
 }
 void ItemBox::OnKartCollisionStay(Kart* other) {
 	OutputDebugString("Collision Stay\n");
