@@ -24,6 +24,7 @@ public:
 	virtual void Update(float timestep);
 
 	Vector3 GetVelocity() { return m_velocity; }
+	Vector3 GetAcceleration() { return m_acceleration; }
 	
 };
 

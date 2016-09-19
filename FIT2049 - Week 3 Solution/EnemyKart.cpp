@@ -1,6 +1,8 @@
 #include "EnemyKart.h"
 #include "MathsHelper.h"
 
+#include <iostream>
+
 EnemyKart::EnemyKart(Mesh* mesh,
 	Shader* shader,
 	Texture* texture,
@@ -21,8 +23,6 @@ EnemyKart::EnemyKart(Mesh* mesh,
 
 void EnemyKart::Update(float timestep) {
 
-	//System.out.println("HERE");
-
 	if (Vector3::DistanceSquared(GetPosition(), m_targetPosition) <= 50.0f) {
 		m_targetPosition = GetRandomPosition();
 	}
@@ -41,23 +41,15 @@ void EnemyKart::Update(float timestep) {
 		Vector3 normalTargetVector = Vector3(targetVector.x / vectorLength, 
 												targetVector.y / vectorLength, 
 												targetVector.z / vectorLength);
-		
-		// Get the dot product
-		// This might not be necessary
-		/*
-		float dotProduct = normalTargetVector.x * localForward.x +
-							normalTargetVector.y * localForward.y +
-							normalTargetVector.z * localForward.z;
-		*/
 
 		// Use the cross product to determine what direction to turn
 		float crossProduct = localForward.x * normalTargetVector.z - localForward.z*normalTargetVector.x;
 
 		// Use the sign of the cross product to turn left or right
-		if (crossProduct > 0.05f) {
+		if (crossProduct > 0.01f) {
 			m_rotY -= m_turnSpeed * timestep;
 		}
-		else if (crossProduct < -0.05f) {
+		else if (crossProduct < -0.01f) {
 			m_rotY += m_turnSpeed * timestep;
 		}
 
@@ -68,6 +60,8 @@ void EnemyKart::Update(float timestep) {
 	// Move collider
 	m_boundingBox.SetMin(GetPosition() + m_mesh->GetMin());
 	m_boundingBox.SetMax(GetPosition() + m_mesh->GetMax());
+
+	//std::cout << m_boundingBox.GetMax().x << " " << m_boundingBox.GetMax().y << " " << m_boundingBox.GetMax().z << std::endl;
 
 	PhysicsObject::Update(timestep);
 }

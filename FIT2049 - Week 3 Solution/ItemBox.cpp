@@ -19,12 +19,13 @@ void ItemBox::Update(float timestep) {
 }
 
 void ItemBox::OnKartCollisionEnter(Kart* other) {
+	OutputDebugString("OnKartCollisionEnter\n");
 	other->SetItemValue(itemValue);
 	itemValue = std::rand() % 2;
 }
 void ItemBox::OnKartCollisionStay(Kart* other) {
-	OutputDebugString("Collision Stay\n");
+	//OutputDebugString("Collision Stay\n");
 }
 void ItemBox::OnKartCollisionExit(Kart* other) {
-	OutputDebugString("Collision Exit\n");
+	//OutputDebugString("Collision Exit\n");
 }

@@ -10,6 +10,8 @@
 #include "SurveillanceCamera.h"
 #include "ThirdPersonCamera.h"
 
+#include <iostream>
+
 Game::Game()
 {
 	m_renderer = NULL;
@@ -46,13 +48,18 @@ bool Game::Initialise(Direct3D* renderer, InputController* input)
 	InitUI();
 	InitStates();
 
-	m_collisionManager = new CollisionManager(&m_karts, &m_itemBoxes);
+	// TODO
+	// Need to give the collisions manager the moving items as well
+	m_collisionManager = new CollisionManager(&m_karts, &m_itemBoxes, &m_walls, &m_movingItemObjects);
 
 	Kart* kart = new Kart(Mesh::GetMesh("Kart"), 
 		m_texturedShader, 
 		Texture::GetTexture("RedKart"), 
 		Vector3(0, 0, 0), 
 		m_input);
+	m_playerKart = kart;
+	kart->GetItemPointers(&m_itemTextures,&m_itemMeshes,m_texturedShader);
+	kart->GetItemList(&m_gameObjects, &m_movingItemObjects);
 	m_gameObjects.push_back(kart);
 	m_karts.push_back(kart);
 
@@ -75,8 +82,37 @@ bool Game::Initialise(Direct3D* renderer, InputController* input)
 		m_gameObjects.push_back(enemy);
 		m_karts.push_back(enemy);
 	}
+
+	//OutputDebugString(m_playerKart->GetItemValue());
+	int playerItemIndex = m_playerKart->GetItemValue();
+	m_currentItem = m_currentItemArray[playerItemIndex];
+	m_currentItemSprite = Texture::GetTexture(m_currentItem);
 	
 	m_gameObjects.push_back(new StaticObject(Mesh::GetMesh("Ground"), m_texturedShader, Texture::GetTexture("Grass"), Vector3(0,0,0)));
+	m_gameObjects.push_back(new StaticObject(Mesh::GetMesh("RumbleStrip"), m_texturedShader, Texture::GetTexture("RumbleStrip"), Vector3(0, 0, 0)));
+	m_gameObjects.push_back(new StaticObject(Mesh::GetMesh("Wall"), m_texturedShader, Texture::GetTexture("Wall"), Vector3(0, 0, 0)));
+
+	// Create the four walls for collisions
+
+	Wall* northWall = new Wall();
+	northWall->SetBounds(CBoundingBox(Vector3(-300,0,300),Vector3(300,0,320)));
+	northWall->SetFace(Vector3(0, 0, -1));
+	m_walls.push_back(northWall);
+
+	Wall* southWall = new Wall();
+	southWall->SetBounds(CBoundingBox(Vector3(-300, 0, -320), Vector3(300, 0, -300)));
+	southWall->SetFace(Vector3(0, 0, 1));
+	m_walls.push_back(southWall);
+
+	Wall* eastWall = new Wall();
+	eastWall->SetBounds(CBoundingBox(Vector3(-320, 0, -300), Vector3(-300, 0, 300)));
+	eastWall->SetFace(Vector3(1, 0, 0));
+	m_walls.push_back(eastWall);
+
+	Wall* westWall = new Wall();
+	westWall->SetBounds(CBoundingBox(Vector3(300, 0, -300), Vector3(320, 0, 300)));
+	westWall->SetFace(Vector3(-1, 0, 0));
+	m_walls.push_back(westWall);
 
 	//m_currentCam = new Camera();
 	//m_currentCam = new SurveillanceCamera(kart,0.5f);
@@ -143,9 +179,39 @@ bool Game::LoadTextures()
 	if (!Texture::LoadFromFile(L"Assets/Textures/item_box.png", "Box", m_renderer))
 		return false;
 
+	// Load the green shell
+	if (!Texture::LoadFromFile(L"Assets/Textures/shell_green.png", "GreenShell", m_renderer))
+		return false;
+
+	m_itemTextures.push_back("GreenShell");
+
+	if (!Texture::LoadFromFile(L"Assets/Textures/sprite_green_shell.png", "GreenShellIcon", m_renderer)) {
+		return false;
+	}
+	m_currentItemArray.push_back("GreenShellIcon");
+
+	// Load the red shell
+	
+	if (!Texture::LoadFromFile(L"Assets/Textures/shell_red.png", "RedShell", m_renderer))
+		return false;
+
+	m_itemTextures.push_back("RedShell");
+
+	if (!Texture::LoadFromFile(L"Assets/Textures/sprite_red_shell.png", "RedShellIcon", m_renderer)) {
+		return false;
+	}
+	m_currentItemArray.push_back("RedShellIcon");
+	
+
 	if (!Texture::LoadFromFile(L"Assets/Textures/grass.jpg", "Grass", m_renderer))
 		return false;
 
+	if (!Texture::LoadFromFile(L"Assets/Textures/wall.png", "Wall", m_renderer))
+		return false;
+
+	if (!Texture::LoadFromFile(L"Assets/Textures/rumble_strip.jpg", "RumbleStrip", m_renderer))
+		return false;
+	
 	return true;
 }
 
@@ -159,6 +225,19 @@ bool Game::LoadMeshes()
 
 	if (!Mesh::LoadFromFile(L"Assets/Meshes/ground.obj", "Ground", m_renderer))
 		return false;
+
+	if (!Mesh::LoadFromFile(L"Assets/Meshes/wall.obj", "Wall", m_renderer))
+		return false;
+
+	if (!Mesh::LoadFromFile(L"Assets/Meshes/rumble_strip.obj", "RumbleStrip", m_renderer))
+		return false;
+
+	if (!Mesh::LoadFromFile(L"Assets/Meshes/shell.obj", "Shell", m_renderer))
+		return false;
+
+	// push the shell on twice, once for the red, once for the green
+	m_itemMeshes.push_back("Shell");
+	m_itemMeshes.push_back("Shell");
 
 	return true;
 }
@@ -227,6 +306,26 @@ void Game::Gameplay_OnUpdate(float timestep)
 
 	m_collisionManager->CheckCollisions();
 
+	// Finds all the items that need to be removed from m_gameObjects
+	int index = 0;
+	while (index < m_gameObjects.size()) {
+		int status = m_gameObjects[index]->GetStatus();
+		if (status == 0) {
+			//m_gameObjects[index]->~GameObject();
+			m_gameObjects.erase(m_gameObjects.begin() + index);
+		}
+		index++;
+	}
+
+	index = 0;
+	while (index < m_movingItemObjects.size()) {
+		int status = m_movingItemObjects[index]->GetStatus();
+		if (status == 0) {
+			m_movingItemObjects.erase(m_movingItemObjects.begin() + index);
+		}
+		index++;
+	}
+
 	m_currentCam->Update(timestep);
 }
 
@@ -238,6 +337,12 @@ void Game::Gameplay_OnRender()
 		m_gameObjects[i]->Render(m_renderer, m_currentCam);
 	}
 
+	/*
+	// Update all our game items
+	for (unsigned int i = 0; i < m_movingItemObjects.size(); i++) {
+		//m_movingItemObjects[i]->Render(m_renderer,m_currentCam);
+	}
+	*/
 	DrawGameUI();
 }
 
@@ -289,6 +394,16 @@ void Game::DrawGameUI()
 
 	m_arialFont12->DrawString(m_spriteBatch, L"P to toggle pause",
 		Vector2(450, 700), Color(0.5f, 0.5f, 0.5f), 0, Vector2(0, 0));
+
+	// IMPORTANT
+	// Need to instantiate the new int
+	int playerItemIndex = m_playerKart->GetItemValue();
+	// Only draw if the player currentl has an item
+	if (playerItemIndex >= 0) {
+		m_currentItem = m_currentItemArray[playerItemIndex];
+		m_currentItemSprite = Texture::GetTexture(m_currentItem);
+		m_spriteBatch->Draw(m_currentItemSprite->GetShaderResourceView(), Vector2(20, 100), Color(1.0f, 1.0f, 1.0f));
+	}
 
 	m_spriteBatch->End();
 }

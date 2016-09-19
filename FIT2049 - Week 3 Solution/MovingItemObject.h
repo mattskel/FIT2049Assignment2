@@ -2,8 +2,10 @@
 #define MOVING_ITEM_OBJECT_H
 
 #include "PhysicsObject.h"
+#include "Kart.h"
+#include "Wall.h"
 
-class MovingItemObject : PhysicsObject {
+class MovingItemObject : public PhysicsObject {
 
 private:
 
@@ -27,8 +29,12 @@ public:
 	Vector3 GetLocalForward();
 
 	void OnObjectCollisionEnter();
-	void OnObjectCollisionStay();
-	void OnObjectCollisionExit();
+	//void OnObjectCollisionStay();
+	//void OnObjectCollisionExit();
+
+	void OnKartCollisionEnter();
+
+	void OnWallCollisionEnter(Wall* other);
 };
 
 #endif

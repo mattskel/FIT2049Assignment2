@@ -24,6 +24,8 @@
 #include "Kart.h"
 #include "ItemBox.h"
 #include "EnemyKart.h"
+#include "Wall.h"
+#include "MovingItemObject.h"
 
 #include <vector>
 
@@ -53,6 +55,10 @@ private:
 	std::vector<GameObject*> m_gameObjects;
 	std::vector<Kart*> m_karts;
 	std::vector<ItemBox*> m_itemBoxes;
+	std::vector<Wall*> m_walls;
+
+	std::vector<MovingItemObject*> m_movingItemObjects;
+
 
 	Kart* m_playerKart;
 
@@ -72,6 +78,10 @@ private:
 
 	// Array to hold icon sprites
 	std::vector<const char*> m_currentItemArray;
+	std::vector<const char*> m_itemList;
+
+	std::vector<const char*> m_itemTextures;
+	std::vector<const char*> m_itemMeshes;
 
 	// Splitting initialisation up into several steps
 	void InitStates();
