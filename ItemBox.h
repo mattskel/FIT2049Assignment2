@@ -2,11 +2,12 @@
 #define ITEM_BOX_H
 
 #include "GameObject.h"
+#include "SpinningObject.h"
 
 // Forward declare Kart to prevent loops
 class Kart;
 
-class ItemBox : public GameObject
+class ItemBox : public SpinningObject
 {
 private:
 	CBoundingBox m_boundingBox;
@@ -18,7 +19,7 @@ public:
 		Texture* texture,
 		Vector3 position);
 
-	void Update(float timestep);
+	//void Update(float timestep);
 
 	CBoundingBox GetBounds() { return m_boundingBox; }
 

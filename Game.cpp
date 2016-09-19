@@ -10,6 +10,8 @@
 #include "SurveillanceCamera.h"
 #include "ThirdPersonCamera.h"
 
+#include "MathsHelper.h"
+
 #include <iostream>
 
 Game::Game()
@@ -51,7 +53,11 @@ bool Game::Initialise(Direct3D* renderer, InputController* input)
 	// TODO
 	// Need to give the collisions manager the moving items as well
 	//m_collisionManager = new CollisionManager(&m_karts, &m_itemBoxes, &m_walls, &m_movingItemObjects);
-	m_collisionManager = new CollisionManager(&m_karts, &m_itemBoxes, &m_walls, &m_shells);
+	m_collisionManager = new CollisionManager(&m_karts, 
+											&m_itemBoxes, 
+											&m_walls, 
+											&m_shells,
+											&m_otherItems);
 
 	Kart* kart = new Kart(Mesh::GetMesh("Kart"), 
 		m_texturedShader, 
@@ -59,18 +65,21 @@ bool Game::Initialise(Direct3D* renderer, InputController* input)
 		Vector3(0, 0, 0), 
 		m_input);
 	m_playerKart = kart;
-	kart->GetItemPointers(&m_itemTextures,&m_itemMeshes,m_texturedShader);
+	kart->GetItemPointers(&m_itemTextures,
+						&m_itemMeshes,
+						m_texturedShader);
 	//kart->GetItemList(&m_gameObjects, &m_movingItemObjects);
-	kart->GetObjects(&m_gameObjects, &m_karts, &m_shells);
+	kart->GetObjects(&m_gameObjects, &m_karts, &m_shells, &m_otherItems);
 	m_gameObjects.push_back(kart);
 	m_karts.push_back(kart);
 
 	// Create item boxes
-	for (int i = 0; i < 3; i++) {
+	for (int i = 0; i < 4; i++) {
 		ItemBox* itemBox = new ItemBox(Mesh::GetMesh("Box"),
 			m_texturedShader,
 			Texture::GetTexture("Box"),
-			Vector3(i * 30, 0, 0));
+			/*Vector3(i * 30, 0, 0));*/
+			Vector3(MathsHelper::RandomRange(-299, 299), 0, MathsHelper::RandomRange(-299, 299)));
 		m_gameObjects.push_back(itemBox);
 		m_itemBoxes.push_back(itemBox);
 	}
@@ -81,6 +90,9 @@ bool Game::Initialise(Direct3D* renderer, InputController* input)
 			m_texturedShader,
 			Texture::GetTexture("RedKart"),
 			Vector3(i*50, 0, i*50 + 100));
+		enemy->GetItemPointers(&m_itemTextures, &m_itemMeshes, m_texturedShader);
+		enemy->GetObjects(&m_gameObjects, &m_karts, &m_shells, &m_otherItems);
+		enemy->GetItemBoxes(&m_itemBoxes);
 		m_gameObjects.push_back(enemy);
 		m_karts.push_back(enemy);
 	}
@@ -97,22 +109,22 @@ bool Game::Initialise(Direct3D* renderer, InputController* input)
 	// Create the four walls for collisions
 
 	Wall* northWall = new Wall();
-	northWall->SetBounds(CBoundingBox(Vector3(-300,0,300),Vector3(300,0,320)));
+	northWall->SetBounds(CBoundingBox(Vector3(-300,0,300),Vector3(300,10,320)));
 	northWall->SetFace(Vector3(0, 0, -1));
 	m_walls.push_back(northWall);
 
 	Wall* southWall = new Wall();
-	southWall->SetBounds(CBoundingBox(Vector3(-300, 0, -320), Vector3(300, 0, -300)));
+	southWall->SetBounds(CBoundingBox(Vector3(-300, 0, -320), Vector3(300, 10, -300)));
 	southWall->SetFace(Vector3(0, 0, 1));
 	m_walls.push_back(southWall);
 
 	Wall* eastWall = new Wall();
-	eastWall->SetBounds(CBoundingBox(Vector3(-320, 0, -300), Vector3(-300, 0, 300)));
+	eastWall->SetBounds(CBoundingBox(Vector3(-320, 0, -300), Vector3(-300, 10, 300)));
 	eastWall->SetFace(Vector3(1, 0, 0));
 	m_walls.push_back(eastWall);
 
 	Wall* westWall = new Wall();
-	westWall->SetBounds(CBoundingBox(Vector3(300, 0, -300), Vector3(320, 0, 300)));
+	westWall->SetBounds(CBoundingBox(Vector3(300, 0, -300), Vector3(320, 10, 300)));
 	westWall->SetFace(Vector3(-1, 0, 0));
 	m_walls.push_back(westWall);
 
@@ -193,16 +205,22 @@ bool Game::LoadTextures()
 	m_currentItemArray.push_back("GreenShellIcon");
 
 	// Load the red shell
-	
 	if (!Texture::LoadFromFile(L"Assets/Textures/shell_red.png", "RedShell", m_renderer))
 		return false;
-
 	m_itemTextures.push_back("RedShell");
-
 	if (!Texture::LoadFromFile(L"Assets/Textures/sprite_red_shell.png", "RedShellIcon", m_renderer)) {
 		return false;
 	}
 	m_currentItemArray.push_back("RedShellIcon");
+
+	// Load Banana
+	if(!Texture::LoadFromFile(L"Assets/Textures/banana.png", "Banana", m_renderer))
+		return false;
+	m_itemTextures.push_back("Banana");
+	if (!Texture::LoadFromFile(L"Assets/Textures/sprite_banana.png", "BananaIcon", m_renderer)) {
+		return false;
+	}
+	m_currentItemArray.push_back("BananaIcon");
 	
 
 	if (!Texture::LoadFromFile(L"Assets/Textures/grass.jpg", "Grass", m_renderer))
@@ -237,9 +255,13 @@ bool Game::LoadMeshes()
 	if (!Mesh::LoadFromFile(L"Assets/Meshes/shell.obj", "Shell", m_renderer))
 		return false;
 
+	if (!Mesh::LoadFromFile(L"Assets/Meshes/banana.obj", "Banana", m_renderer))
+		return false;
+
 	// push the shell on twice, once for the red, once for the green
 	m_itemMeshes.push_back("Shell");
 	m_itemMeshes.push_back("Shell");
+	m_itemMeshes.push_back("Banana");
 
 	return true;
 }
@@ -324,6 +346,15 @@ void Game::Gameplay_OnUpdate(float timestep)
 		int status = m_shells[index]->GetStatus();
 		if (status == 0) {
 			m_shells.erase(m_shells.begin() + index);
+		}
+		index++;
+	}
+
+	index = 0;
+	while (index < m_otherItems.size()) {
+		int status = m_otherItems[index]->GetStatus();
+		if (status == 0) {
+			m_otherItems.erase(m_otherItems.begin() + index);
 		}
 		index++;
 	}

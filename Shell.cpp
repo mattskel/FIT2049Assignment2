@@ -7,7 +7,7 @@ Shell::Shell(Mesh* mesh,
 	Vector3 direction) :
 	PhysicsObject(mesh, shader, texture, position + 20 * direction) {
 
-	m_moveSpeed = 7.0f; // Alter these to change the speed
+	m_moveSpeed = 5.0f; // Alter these to change the speed
 	m_turnSpeed = 4.0f;
 	m_frictionAmount = 3.0f;
 	m_boundingBox = CBoundingBox(GetPosition() + m_mesh->GetMin(),
@@ -25,4 +25,14 @@ Vector3 Shell::GetLocalForward() {
 
 void Shell::OnObjectCollisionEnter() {}
 void Shell::OnKartCollisionEnter() { m_status = 0; }
-void Shell::OnWallCollisionEnter(Wall* other) {}
+
+void Shell::OnWallCollisionEnter(Wall* other) {
+	
+	Vector3 velocity = GetVelocity();
+	Vector3 wallFace = other->GetLocalFace();
+	float dotProd = m_direction.x * wallFace.x +
+					m_direction.z * wallFace.z;
+
+	m_direction = m_direction - wallFace * 2 * dotProd;
+	ApplyForce(4.0 * (m_direction));
+}

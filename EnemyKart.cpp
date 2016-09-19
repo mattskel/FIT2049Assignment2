@@ -10,23 +10,57 @@ EnemyKart::EnemyKart(Mesh* mesh,
 	Kart(mesh,shader,texture,position,NULL) {
 
 	
-	m_moveSpeed = 2.0f; // Alter these to change the speed
+	m_moveSpeed = 3.0f; // Alter these to change the speed
 	m_turnSpeed = 4.0f;
 	m_frictionAmount = 4.0f;
 
 	m_boundingBox = CBoundingBox(GetPosition() + m_mesh->GetMin(),
 		GetPosition() + m_mesh->GetMax());
 	
-
+	m_targetIsItemBox = false;
 	m_targetPosition = GetRandomPosition();
+	m_previousItemBox = NULL;
 }
 
 void EnemyKart::Update(float timestep) {
 
-	if (Vector3::DistanceSquared(GetPosition(), m_targetPosition) <= 50.0f) {
+	// Check for an item
+	// Release if it exists
+	if (m_itemValue >= 0) {
+		ItemReleased();
+	}
+
+	if (Vector3::DistanceSquared(GetPosition(), m_targetPosition) <= 2.0f) {
 		m_targetPosition = GetRandomPosition();
+		m_targetIsItemBox = false;
 	}
 	else {
+
+		// First check if there are any item boxes near by
+		// If there are then we will reset m_targetPosition
+		// Only check if we are not already looking for an ItemBox
+		float maxDist = 50.0f;	// We are looking for an item box less than 50.f away
+		float minDist = 20.0f;
+		if (!m_targetIsItemBox) {
+			for (ItemBox* itemBox : *m_itemBoxes) {
+				// Check we are not returning to Item Box just visited
+				if (itemBox != m_previousItemBox) {
+					Vector3 itemBoxPosition = itemBox->GetPosition();
+					Vector3 itemBoxVector = itemBoxPosition - GetPosition();
+
+					//Get the vector length
+					float vectorLength = itemBoxVector.Length();
+					if (vectorLength < maxDist && vectorLength > minDist) {
+						maxDist = vectorLength;
+						m_targetPosition = itemBoxPosition;
+						m_previousItemBox = itemBox;
+					}
+				}
+			}
+		}
+		if (maxDist < 50.0f) {
+			m_targetIsItemBox = true;
+		}
 
 		Vector3 worldForward = Vector3(0, 0, 1);
 		Matrix heading = Matrix::CreateRotationY(m_rotY);

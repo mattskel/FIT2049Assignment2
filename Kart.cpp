@@ -1,6 +1,8 @@
 #include "Kart.h"
 //#include "ItemBox.h"
 #include "RedShell.h"
+#include "GreenShell.h"
+#include "Banana.h"
 
 #include <iostream>
 
@@ -81,10 +83,12 @@ void Kart::GetItemPointers(std::vector<const char*>* itemTextures,
 
 void Kart::GetObjects(std::vector<GameObject*>* gameObjects,
 	std::vector<Kart*>* karts,
-	std::vector<Shell*>* shells) {
+	std::vector<Shell*>* shells,
+	std::vector<GameObject*>* otherItems) {
 	m_gameObjects = gameObjects;
 	m_karts = karts;
 	m_shells = shells;
+	m_otherItems = otherItems;
 }
 
 
@@ -94,8 +98,18 @@ void Kart::ItemReleased() {
 
 		switch (m_itemValue) {
 		case 0:
+		{
+			GreenShell* greenShell = new GreenShell(Mesh::GetMesh((*m_itemMeshes)[1]),
+				m_texturedShader,
+				Texture::GetTexture((*m_itemTextures)[m_itemValue]),
+				GetPosition(),
+				GetLocalForward());
+			m_shells->push_back(greenShell);
+			m_gameObjects->push_back(greenShell);
 			break;
+		}
 		case 1:
+		{
 			RedShell* redShell = new RedShell(Mesh::GetMesh((*m_itemMeshes)[1]),
 				m_texturedShader,
 				Texture::GetTexture((*m_itemTextures)[m_itemValue]),
@@ -107,18 +121,17 @@ void Kart::ItemReleased() {
 			m_gameObjects->push_back(redShell);
 			break;
 		}
-
-		/*MovingItemObject* newItem = new MovingItemObject(Mesh::GetMesh((*m_itemMeshes)[1]),
-			m_texturedShader,
-			Texture::GetTexture((*m_itemTextures)[m_itemValue]),
-			GetPosition(),
-			GetLocalForward());*/
-			
-
-		// Need to add the new item to the moving items list
-		//m_movingItemObjects->push_back(newItem);
-		//m_shells->push_back(newItem);
-		//m_gameObjects->push_back(newItem);
+		case 2:
+		{
+			Banana* banana = new Banana(Mesh::GetMesh((*m_itemMeshes)[1]),
+										m_texturedShader,
+										Texture::GetTexture((*m_itemTextures)[m_itemValue]),
+										GetPosition() - 10.0 * GetLocalForward());
+			m_otherItems->push_back(banana);
+			m_gameObjects->push_back(banana);
+			break;
+		}
+		}
 		m_itemValue = -1;
 	}
 }
@@ -244,4 +257,9 @@ void Kart::OnShellCollisionEnter(Shell* other) {
 	Vector3 forceVector = Vector3(velocity2.x * unitNormal.x, 0, velocity2.z * unitNormal.z);
 
 	ApplyForce(4.0 * velocity2);
+}
+
+void Kart::OnOtherItemCollisionEnter() {
+	Vector3 velocity = GetVelocity();
+	ApplyForce(-4.0 * velocity);
 }

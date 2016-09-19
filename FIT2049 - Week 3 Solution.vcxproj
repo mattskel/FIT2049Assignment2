@@ -65,6 +65,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Banana.cpp" />
     <ClCompile Include="Button.cpp" />
     <ClCompile Include="Camera.cpp" />
     <ClCompile Include="CollisionManager.cpp" />
@@ -73,6 +74,7 @@
     <ClCompile Include="EnemyKart.cpp" />
     <ClCompile Include="Game.cpp" />
     <ClCompile Include="GameObject.cpp" />
+    <ClCompile Include="GreenShell.cpp" />
     <ClCompile Include="InputController.cpp" />
     <ClCompile Include="ItemBox.cpp" />
     <ClCompile Include="Main.cpp" />
@@ -92,6 +94,7 @@
     <ClCompile Include="Window.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Banana.h" />
     <ClInclude Include="Button.h" />
     <ClInclude Include="Camera.h" />
     <ClInclude Include="CollisionManager.h" />
@@ -105,6 +108,7 @@
     <ClInclude Include="EnemyKart.h" />
     <ClInclude Include="Game.h" />
     <ClInclude Include="GameObject.h" />
+    <ClInclude Include="GreenShell.h" />
     <ClInclude Include="InputController.h" />
     <ClInclude Include="Item.h" />
     <ClInclude Include="ItemBox.h" />

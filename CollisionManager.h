@@ -21,6 +21,7 @@ private:
 	std::vector<Wall*>* m_walls;
 	std::vector<MovingItemObject*>* m_movingItemObjects;
 	std::vector<Shell*>* m_shells;
+	std::vector<GameObject*>* m_otherItems;
 	// You could also pass in an array of items
 
 	GameObject* m_currentCollisions[MAX_ALLOWED_COLLISIONS];
@@ -50,6 +51,10 @@ private:
 
 	void KartToShell();
 
+	void ShellToWall();
+
+	void KartToOtherIterm();
+
 public:
 	/*
 	CollisionManager(std::vector<Kart*>* karts, 
@@ -60,7 +65,8 @@ public:
 	CollisionManager(std::vector<Kart*>* karts,
 		std::vector<ItemBox*>* itemBoxes,
 		std::vector<Wall*>* walls,
-		std::vector<Shell*>* shells);
+		std::vector<Shell*>* shells,
+		std::vector<GameObject*>* otherItems);
 
 	void CheckCollisions();
 

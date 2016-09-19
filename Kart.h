@@ -42,6 +42,7 @@ protected:
 	//std::vector<MovingItemObject*>* m_movingItemObjects;
 	std::vector<Kart*>* m_karts;	// Need a pointer to other karts for RedShell
 	std::vector<Shell*>* m_shells;
+	std::vector<GameObject*>* m_otherItems;
 
 	// Need to know where to put on item after it's been shot
 	//std::vector<MovingItemObject*>* m_movingItems;
@@ -73,7 +74,8 @@ public:
 
 	void GetObjects(std::vector<GameObject*>* gameObjects,
 					std::vector<Kart*>* karts,
-					std::vector<Shell*>* shells);
+					std::vector<Shell*>* shells,
+					std::vector<GameObject*>* otherItems);
 
 	// Kart executes this when an object is fired
 	// Constructs the item object and then adds it to the item lists
@@ -94,6 +96,7 @@ public:
 	//void OnItemObjectCollisionEnter(MovingItemObject* other);
 
 	void OnShellCollisionEnter(Shell* other);
+	void OnOtherItemCollisionEnter();
 	
 };
 

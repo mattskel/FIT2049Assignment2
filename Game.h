@@ -61,6 +61,7 @@ private:
 	// Items
 	std::vector<MovingItemObject*> m_movingItemObjects;
 	std::vector<Shell*> m_shells;
+	std::vector<GameObject*> m_otherItems; // Bananas and BadItems
 
 	Kart* m_playerKart;
 
