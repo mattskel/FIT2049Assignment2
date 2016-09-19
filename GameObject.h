@@ -16,6 +16,9 @@ protected:
 	Texture* m_texture;
 	Shader* m_shader;
 
+	
+	int m_status;	// GameObject status
+
 public:	
 	GameObject();
 	GameObject(Mesh* mesh, Shader* shader);
@@ -35,6 +38,8 @@ public:
 	Mesh* GetMesh() { return m_mesh; }
 	Texture* GetTexture() { return m_texture; }
 	Shader* GetShader() { return m_shader; }
+
+	int GetStatus() { return m_status; }	// Returns the objects status
 
 	// Mutators
 	void SetPosition(Vector3 pos) { m_position = pos; }

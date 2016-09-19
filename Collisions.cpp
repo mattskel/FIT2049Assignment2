@@ -1,6 +1,7 @@
 #include "Collisions.h"
 
 #include <DirectXMath.h>
+#include <iostream>
 
 Vector3 ClosestPointInBoundingBox(const CBoundingBox& bb, const Vector3& point)
 {
@@ -44,6 +45,10 @@ bool CheckCollision(const CBoundingBox& bb, const Vector3& point)
 }
 bool CheckCollision(const CBoundingBox& bb1, const CBoundingBox& bb2)
 {
+
+	//std::cout << bb2.GetMax().x << " " << bb2.GetMax().y << " " << bb2.GetMax().z << std::endl;
+	//std::cout << bb1.GetMax().x << " " << bb1.GetMax().y << " " << bb1.GetMax().z << std::endl;
+
 	return (bb1.GetMax().x > bb2.GetMin().x &&
 			bb1.GetMax().y > bb2.GetMin().y &&
 			bb1.GetMax().z > bb2.GetMin().z &&

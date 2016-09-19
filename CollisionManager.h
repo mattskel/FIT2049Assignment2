@@ -5,14 +5,22 @@
 #include "Kart.h"
 #include "ItemBox.h"
 #include "Collisions.h"
+#include "Wall.h"
+#include "MovingItemObject.h"
+#include "Shell.h"
 
 #define MAX_ALLOWED_COLLISIONS 2048
+
+//class MovingItemObject;
 
 class CollisionManager
 {
 private:
 	std::vector<Kart*>* m_karts;
 	std::vector<ItemBox*>* m_itemBoxes;
+	std::vector<Wall*>* m_walls;
+	std::vector<MovingItemObject*>* m_movingItemObjects;
+	std::vector<Shell*>* m_shells;
 	// You could also pass in an array of items
 
 	GameObject* m_currentCollisions[MAX_ALLOWED_COLLISIONS];
@@ -35,8 +43,25 @@ private:
 
 	void KartToKart();
 
+	// Check collisions with the wall
+	void KartToWall();
+
+	void KartToItem();
+
+	void KartToShell();
+
 public:
-	CollisionManager(std::vector<Kart*>* karts, std::vector<ItemBox*>* itemBoxes);
+	/*
+	CollisionManager(std::vector<Kart*>* karts, 
+		std::vector<ItemBox*>* itemBoxes, 
+		std::vector<Wall*>* walls,
+		std::vector<MovingItemObject*>* movingItemObjects);
+	*/
+	CollisionManager(std::vector<Kart*>* karts,
+		std::vector<ItemBox*>* itemBoxes,
+		std::vector<Wall*>* walls,
+		std::vector<Shell*>* shells);
+
 	void CheckCollisions();
 
 };

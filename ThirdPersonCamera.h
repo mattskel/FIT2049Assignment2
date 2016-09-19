@@ -3,6 +3,7 @@
 
 #include "Camera.h"
 #include "GameObject.h"
+#include "PhysicsObject.h"
 
 class ThirdPersonCamera : public Camera {
 private:

@@ -9,6 +9,7 @@ GameObject::GameObject()
 	m_mesh = NULL;
 	m_texture = NULL;
 	m_shader = NULL;
+	m_status = 1;
 }
 GameObject::GameObject(Mesh* mesh, Shader* shader)
 {
@@ -18,6 +19,7 @@ GameObject::GameObject(Mesh* mesh, Shader* shader)
 	m_mesh = mesh;
 	m_shader = shader;
 	m_texture = NULL;
+	m_status = 1;
 }
 GameObject::GameObject(Mesh* mesh, Shader* shader, Vector3 position)
 {
@@ -27,6 +29,7 @@ GameObject::GameObject(Mesh* mesh, Shader* shader, Vector3 position)
 	m_mesh = mesh;
 	m_shader = shader;
 	m_texture = NULL;
+	m_status = 1;
 }
 GameObject::GameObject(Mesh* mesh, Shader* shader, Texture* texture)
 {
@@ -36,6 +39,7 @@ GameObject::GameObject(Mesh* mesh, Shader* shader, Texture* texture)
 	m_mesh = mesh;
 	m_shader = shader;
 	m_texture = texture;
+	m_status = 1;
 }
 GameObject::GameObject(Mesh* mesh, Shader* shader, Texture* texture, Vector3 position)
 {
@@ -45,6 +49,7 @@ GameObject::GameObject(Mesh* mesh, Shader* shader, Texture* texture, Vector3 pos
 	m_mesh = mesh;
 	m_shader = shader;
 	m_texture = texture;
+	m_status = 1;
 }
 
 GameObject::~GameObject() {}

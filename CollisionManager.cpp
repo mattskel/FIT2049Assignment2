@@ -1,9 +1,17 @@
 #include "CollisionManager.h"
 
-CollisionManager::CollisionManager(std::vector<Kart*>* karts, std::vector<ItemBox*>* itemBoxes)
+#include <iostream>
+
+/*CollisionManager::CollisionManager(std::vector<Kart*>* karts, std::vector<ItemBox*>* itemBoxes, std::vector<Wall*>* walls,
+	std::vector<MovingItemObject*>* movingItemObjects)*/
+CollisionManager::CollisionManager(std::vector<Kart*>* karts, std::vector<ItemBox*>* itemBoxes, std::vector<Wall*>* walls,
+	std::vector<Shell*>* shells)
 {
 	m_karts = karts;
 	m_itemBoxes = itemBoxes;
+	m_walls = walls;
+	//m_movingItemObjects = movingItemObjects;
+	m_shells = shells;
 
 	// Clear our arrays to 0 (NULL)
 	memset(m_currentCollisions, 0, sizeof(m_currentCollisions));
@@ -19,6 +27,14 @@ void CollisionManager::CheckCollisions()
 
 	// Check kart to kart collisions
 	KartToKart();
+
+	// Check kart to wall collisions
+	KartToWall();
+
+	// Check kart to item
+	//KartToItem();
+
+	KartToShell();
 
 	// Move all current collisions into previous
 	memcpy(m_previousCollisions, m_currentCollisions, sizeof(m_currentCollisions));
@@ -62,6 +78,44 @@ void CollisionManager::AddCollision(GameObject* first, GameObject* second)
 void CollisionManager::KartToItemBox()
 {
 	
+	for (unsigned int i = 0; i < m_karts->size(); i++) {
+		for (unsigned int j = 0; j < m_itemBoxes->size(); j++) {
+
+			Kart* kart = (*m_karts)[i];
+			ItemBox* itemBox = (*m_itemBoxes)[j];
+
+			CBoundingBox kartBounds = kart->GetBounds();
+			CBoundingBox itemBoxBounds = itemBox->GetBounds();
+
+			bool isColliding = CheckCollision(kartBounds, itemBoxBounds);
+			bool wasColliding = ArrayContainCollision(m_previousCollisions, kart, itemBox);
+
+			
+			if (isColliding) {
+				// Register the collision
+				AddCollision(kart, itemBox);
+				if (wasColliding) {
+					// We were colliding
+					kart->OnItemCollisionStay(itemBox);
+					itemBox->OnKartCollisionStay(kart);
+				}
+				else {
+					// Colliding this frame but not last frame
+					kart->OnItemCollisionEnter(itemBox);
+					itemBox->OnKartCollisionEnter(kart);
+				}
+			}
+			else {
+				if (wasColliding) {
+					// We aren't colliding this frame but were last
+					kart->OnItemCollisionExit(itemBox);
+					itemBox->OnKartCollisionExit(kart);
+				}
+			}
+			
+		}
+	}
+
 }
 
 void CollisionManager::KartToKart() {
@@ -83,11 +137,9 @@ void CollisionManager::KartToKart() {
 			bool wasColliding = ArrayContainCollision(m_previousCollisions, kart1, kart2);
 
 			if (isColliding) {
-				//OutputDebugString("COLLIDE\n");
 				// Register the collision
 				AddCollision(kart1, kart2);
 				if (wasColliding) {
-					//OutputDebugString("wasColliding\n");
 					// We were colliding
 					kart1->OnKartCollisionStay(kart2);
 					kart2->OnKartCollisionStay(kart1);
@@ -103,6 +155,121 @@ void CollisionManager::KartToKart() {
 					// We aren't colliding this frame but were last
 					kart1->OnKartCollisionExit(kart2);
 					kart2->OnKartCollisionExit(kart1);
+				}
+			}
+		}
+	}
+}
+
+void CollisionManager::KartToWall() {
+
+	// We will check each kart against every other kart
+	for (unsigned int i = 0; i < m_karts->size(); i++) {
+		for (unsigned int j = 0; j < m_walls->size(); j++) {
+
+			//int tmpInt = m_walls->size();
+			//std::cout << tmpInt << std::endl;
+
+			Kart* kart = (*m_karts)[i];
+			Wall* wall = (*m_walls)[j];
+
+			CBoundingBox kartBounds = kart->GetBounds();
+			CBoundingBox wallBounds = wall->GetBounds();
+
+			//std::cout << wallBounds.GetMax().x << " " << wallBounds.GetMin().x << std::endl;
+			//std::cout << "x: " << kartBounds.GetMax().x << " " << kartBounds.GetMin().x << std::endl;
+			//std::cout << "z: " << kartBounds.GetMax().z << " " << kartBounds.GetMin().z << std::endl;
+
+			// Are they colliding this frame?
+			bool isColliding = CheckCollision(kartBounds, wallBounds);
+
+			// Were they colliding last frame?
+			bool wasColliding = ArrayContainCollision(m_previousCollisions, kart, wall);
+
+			if (isColliding) {
+				
+				// Register the collision
+				AddCollision(kart, wall);
+				if (wasColliding) {
+					// We were colliding
+					kart->OnWallCollisionStay(wall);
+					//kart2->OnKartCollisionStay(kart1);
+				}
+				else {
+					OutputDebugString("COLLIDING\n");
+					// Colliding this frame but not last frame
+					kart->OnWallCollisionEnter(wall);
+					//kart2->OnKartCollisionEnter(kart1);
+				}
+			}
+			else {
+				if (wasColliding) {
+					// We aren't colliding this frame but were last
+					kart->OnWallCollisionExit(wall);
+					//kart2->OnKartCollisionExit(kart1);
+				}
+			}
+		}
+	}
+
+}
+
+/*void CollisionManager::KartToItem() {
+	for (unsigned int i = 0; i < m_karts->size(); i++) {
+		for (unsigned int j = 0; j < m_movingItemObjects->size(); j++) {
+
+			Kart* kart = (*m_karts)[i];
+			MovingItemObject* movingItemObject = (*m_movingItemObjects)[j];
+
+			CBoundingBox kartBounds = kart->GetBounds();
+			CBoundingBox movingItemBounds = movingItemObject->GetBounds();
+
+			bool isColliding = CheckCollision(kartBounds, movingItemBounds);
+			bool wasColliding = ArrayContainCollision(m_previousCollisions, kart, movingItemObject);
+
+			if (isColliding) {
+				AddCollision(kart, movingItemObject);
+				if (wasColliding) {
+				}
+				else {
+					OutputDebugString("COLLIDING\n");
+					kart->OnItemObjectCollisionEnter(movingItemObject);
+					movingItemObject->OnKartCollisionEnter();
+				}
+			}
+			else {
+				if (wasColliding) {
+				}
+			}
+		}
+	}
+}*/
+
+void CollisionManager::KartToShell() {
+	for (unsigned int i = 0; i < m_karts->size(); i++) {
+		for (unsigned int j = 0; j < m_shells->size(); j++) {
+
+			Kart* kart = (*m_karts)[i];
+			Shell* shell = (*m_shells)[j];
+
+			CBoundingBox kartBounds = kart->GetBounds();
+			CBoundingBox shellBounds = shell->GetBounds();
+
+			bool isColliding = CheckCollision(kartBounds, shellBounds);
+			bool wasColliding = ArrayContainCollision(m_previousCollisions, kart, shell);
+
+			if (isColliding) {
+				AddCollision(kart, shell);
+				if (wasColliding) {
+				}
+				else {
+					OutputDebugString("COLLIDING\n");
+					kart->OnShellCollisionEnter(shell);
+					shell->OnKartCollisionEnter();
+				}
+			}
+			else {
+				if (wasColliding) {
 				}
 			}
 		}

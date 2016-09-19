@@ -1,8 +1,8 @@
 /*	FIT2049 - Week 1 Example Code
- *	Window.cpp
- *	Created by Elliott Wilson - 2015 - Monash University
- *	Implementation of Window.h
- */
+*	Window.cpp
+*	Created by Elliott Wilson - 2015 - Monash University
+*	Implementation of Window.h
+*/
 
 #include "Window.h"
 #include <iostream>
@@ -31,7 +31,7 @@ Window::Window(const char* windowName, int width, int height, bool fullscreen)
 Window::~Window()
 {
 	//When the window is destroyed we need to delete the Direct3D renderer
-	if(m_renderer)
+	if (m_renderer)
 	{
 		m_renderer->Shutdown();
 		delete m_renderer;
@@ -47,10 +47,10 @@ bool Window::Initialise()
 	int posY;	//Used to store the vertical position of the window
 
 	g_window = this;	//We need to set the global window pointer to this object. The WindowProc function will use this pointer so that it can
-						//interact with our window object
+	//interact with our window object
 
 	m_hInstance = GetModuleHandle(NULL);	//The GetModuleHandle function returns the HINSTANCE of the running program, this is required by the
-											//WNDCLASS.
+	//WNDCLASS.
 
 	memset(&windowClass, 0, sizeof(windowClass));	//We set the memory of the Window Class to 0, this clears it out so that we can fill it in cleanly
 
@@ -65,7 +65,7 @@ bool Window::Initialise()
 
 	RegisterClassEx(&windowClass);	//Once we have created our Window Class we register it with the OS. We can now create windows basic off this class!
 
-	if(m_fullscreen)
+	if (m_fullscreen)
 	{
 		//If we want a full screen window we have to create a new DEVMODE struct to change the screen display mode.
 		m_width = GetSystemMetrics(SM_CXSCREEN);	//First we need the Max width of the screen
@@ -93,16 +93,16 @@ bool Window::Initialise()
 	//After we have set the correct display settings and the window position we can then create the actual window!
 	//The CreateWindowEx method returns a HWND which is a Handle that we use to refer to our window.
 	m_windowHandle = CreateWindowEx(WS_EX_APPWINDOW,	//This is the extended window style, it allows us to define special functionality for the window, but we just want a simple app window
-									m_windowName,		//This is the name of the Window Class that we will use for this window, this must match the name of the class we register earlier
-									m_windowName,		//This is the title of the window, it appears in the title bar.
-									WS_CLIPSIBLINGS | WS_CLIPCHILDREN | WS_OVERLAPPEDWINDOW,	//This is the window style, you can create interesting windows by ORing styles together
-																					//The WS_POPUP gives us a nice boarderless window but try changing it to WS_OVERLAPPEDWINDOW
-									posX, posY,			//Here we set the screen position of the Window
-									m_width, m_height,	//Here we set the width and height
-									NULL,				//Which window is the parent of this window? Noone!
-									NULL,				//Does this window have a menu bar? Nope!
-									m_hInstance,		//Which program does this Window belong to?
-									NULL);				//Extra data for things that beyond the scope of this unit
+		m_windowName,		//This is the name of the Window Class that we will use for this window, this must match the name of the class we register earlier
+		m_windowName,		//This is the title of the window, it appears in the title bar.
+		WS_CLIPSIBLINGS | WS_CLIPCHILDREN | WS_OVERLAPPEDWINDOW,	//This is the window style, you can create interesting windows by ORing styles together
+		//The WS_POPUP gives us a nice boarderless window but try changing it to WS_OVERLAPPEDWINDOW
+		posX, posY,			//Here we set the screen position of the Window
+		m_width, m_height,	//Here we set the width and height
+		NULL,				//Which window is the parent of this window? Noone!
+		NULL,				//Does this window have a menu bar? Nope!
+		m_hInstance,		//Which program does this Window belong to?
+		NULL);				//Extra data for things that beyond the scope of this unit
 
 	ShowWindow(m_windowHandle, SW_SHOW);	//Display our newly create window!
 	SetForegroundWindow(m_windowHandle);	//Make sure it's in the foreground
@@ -112,7 +112,7 @@ bool Window::Initialise()
 
 	//We create our 3D renderer and initialise it 
 	m_renderer = new Direct3D();
-	if(!m_renderer->Initialise(m_width, m_height, m_windowHandle, m_fullscreen, false))
+	if (!m_renderer->Initialise(m_width, m_height, m_windowHandle, m_fullscreen, false))
 	{
 		ShowCursor(true);
 		return false;
@@ -144,38 +144,68 @@ void Window::Start()
 	//This method runs the message pump which looks out for new message sent by the OS
 
 	//This struct stores the received message
-	MSG msg;	
-	
-	bool running = true;	
+	MSG msg;
 
-	while(running)
+	// We start off with 0 in our bank. See below for an explanation.
+	float timeBank = 0.0f;
+
+	// Our desired timestep - 60 frames a second.
+	const float timeStep = 1.0f / 60.0f;
+
+	bool running = true;
+
+	while (running)
 	{
 		//If is a message, store it in msg and remove it from the message queue
-		if(PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))	
+		if (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
 		{
 			TranslateMessage(&msg);		//Translate the message...
 			DispatchMessage(&msg);		//...and pass it off to the Window Procedure we registered earlier
 		}
 
 		//If we received a Quit message then terminate the message pump and quit the application
-		if(msg.message == WM_QUIT)
+		if (msg.message == WM_QUIT)
 		{
 			running = false;
 		}
 		else
 		{
 			//Here we get the current count of the Performance Counter
-			LARGE_INTEGER currentCount;					
+			LARGE_INTEGER currentCount;
 			QueryPerformanceCounter(&currentCount);
 
 			//The calculation of the timestep is difference between the count on this frame and the count on last frame divided by the frequency of the counter
 			//This value is now the number of seconds that have passed since the last frame to this frame, hopefully it is a fractional number, otherwise we are running very slow!
-			float timestep = (currentCount.QuadPart - m_lastCount.QuadPart) / (float)m_counterFrequency.QuadPart;
+			float timeElapsed = (currentCount.QuadPart - m_lastCount.QuadPart) / (float)m_counterFrequency.QuadPart;
 
-			m_game->Update(timestep);	//We tell the game to update, and give it the timestep so it can move things around correctly
-			m_game->Render();			//After everything is updated we can then render a frame
+			// Notice that, up until this point, we've been doing everything exactly the same as we did
+			// in the variable time step version.
 
-			//We set the last count value to the current count so that next frame we still have the count from this frame
+			// Here, we need to do something different. It basically boils down to:
+			// 1) Decoupling Update and Render,
+			// 2) Treating time more as a 'currency'. i.e. "Do I have enough time banked up to Update my game?"
+
+			timeBank += timeElapsed;
+
+			int framesSimulated = 0;
+
+			// If we have time banked up, simulate a frame (call Update). 
+			// Do this by looping fixed time increments (1/60) and passing this for update.
+			// Depending on the timeBank, it's possible we will perform multiple updates
+			// before a render pass takes place.
+			while (timeBank > timeStep)
+			{
+				framesSimulated++;
+				m_game->Update(timeStep);
+
+				timeBank -= timeStep;
+			}
+
+			if (framesSimulated > 0)
+			{
+				m_game->Render();
+			}
+
 			m_lastCount = currentCount;
 
 		}
@@ -186,7 +216,7 @@ void Window::Shutdown()
 {
 	ShowCursor(true);	//When we shutdown we want to make sure the cursor comes back
 
-	if(m_fullscreen)
+	if (m_fullscreen)
 	{
 		ChangeDisplaySettings(NULL, 0);	//If we were fullscreen we need to go back to the default display settings
 	}
@@ -205,10 +235,10 @@ void Window::Shutdown()
 		m_game = NULL;
 	}
 
-	DestroyWindow(m_windowHandle);		
+	DestroyWindow(m_windowHandle);
 	m_windowHandle = NULL;
 
-	UnregisterClass(m_windowName, m_hInstance);	
+	UnregisterClass(m_windowName, m_hInstance);
 	m_hInstance = NULL;
 
 	g_window = NULL;
@@ -217,7 +247,7 @@ void Window::Shutdown()
 LRESULT CALLBACK Window::MessageProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
 	//This is the message procedure within the window class. The Global Window Procedure passes most of the messages it recieved into here
-	switch(message)
+	switch (message)
 	{
 	case WM_KEYDOWN:
 		m_input->SetKeyDown(wParam);

@@ -2,12 +2,15 @@
 #define ITEM_BOX_H
 
 #include "GameObject.h"
-#include "Kart.h"
+
+// Forward declare Kart to prevent loops
+class Kart;
 
 class ItemBox : public GameObject
 {
 private:
 	CBoundingBox m_boundingBox;
+	int itemValue;
 	
 public:
 	ItemBox(Mesh* mesh,

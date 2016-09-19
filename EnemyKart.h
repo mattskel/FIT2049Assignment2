@@ -15,11 +15,12 @@ private:
 
 	Vector3 m_targetPosition;
 
-	
+	/*
 	float m_moveSpeed;
 	float m_turnSpeed;
 
 	CBoundingBox m_boundingBox;
+	*/
 	
 
 	Vector3 GetRandomPosition();

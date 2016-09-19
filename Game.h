@@ -24,6 +24,9 @@
 #include "Kart.h"
 #include "ItemBox.h"
 #include "EnemyKart.h"
+#include "Wall.h"
+#include "MovingItemObject.h"
+#include "Shell.h"
 
 #include <vector>
 
@@ -53,10 +56,20 @@ private:
 	std::vector<GameObject*> m_gameObjects;
 	std::vector<Kart*> m_karts;
 	std::vector<ItemBox*> m_itemBoxes;
+	std::vector<Wall*> m_walls;
+
+	// Items
+	std::vector<MovingItemObject*> m_movingItemObjects;
+	std::vector<Shell*> m_shells;
+
+	Kart* m_playerKart;
 
 	SpriteBatch* m_spriteBatch;
 	SpriteFont* m_arialFont12;
 	SpriteFont* m_arialFont18;
+
+	Texture* m_currentItemSprite;
+	const char* m_currentItem;
 
 	Shader* m_unlitShader;
 	Shader* m_texturedShader;
@@ -64,6 +77,13 @@ private:
 	// The menu screen will display two buttons
 	Button* m_startButton;
 	Button* m_quitButton;
+
+	// Array to hold icon sprites
+	std::vector<const char*> m_currentItemArray;
+	std::vector<const char*> m_itemList;
+
+	std::vector<const char*> m_itemTextures;
+	std::vector<const char*> m_itemMeshes;
 
 	// Splitting initialisation up into several steps
 	void InitStates();
