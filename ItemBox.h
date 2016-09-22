@@ -12,6 +12,10 @@ class ItemBox : public SpinningObject
 private:
 	CBoundingBox m_boundingBox;
 	int itemValue;
+	boolean recentCollision;
+	float m_floatCycleRoot;
+	float m_currentFloatValue;
+	float m_tmpUniformScale;
 	
 public:
 	ItemBox(Mesh* mesh,
@@ -22,6 +26,8 @@ public:
 	//void Update(float timestep);
 
 	CBoundingBox GetBounds() { return m_boundingBox; }
+
+	void Update(float timestep);
 
 	void OnKartCollisionEnter(Kart* other);
 	void OnKartCollisionStay(Kart* other);

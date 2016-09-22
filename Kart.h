@@ -7,6 +7,7 @@
 #include "Wall.h"
 #include "MovingItemObject.h"
 #include "Shell.h"
+#include "Balloon.h"
 //#include "RedShell.h"
 
 #include <vector>
@@ -34,6 +35,8 @@ protected:
 	// Kart will have pointers to everything required to build its own Items
 	std::vector<const char*>* m_itemTextures;
 	std::vector<const char*>* m_itemMeshes;
+	const char* m_balloonTexture;
+	const char* m_balloonMesh;
 	Shader* m_texturedShader;
 
 
@@ -43,6 +46,7 @@ protected:
 	std::vector<Kart*>* m_karts;	// Need a pointer to other karts for RedShell
 	std::vector<Shell*>* m_shells;
 	std::vector<GameObject*>* m_otherItems;
+	std::vector<Balloon*> m_balloons;
 
 	// Need to know where to put on item after it's been shot
 	//std::vector<MovingItemObject*>* m_movingItems;
@@ -53,6 +57,8 @@ public:
 		Texture* texture,
 		Vector3 position,
 		InputController* input);
+
+	void InitBalloons();
 
 	void Update(float timestep);
 
@@ -67,6 +73,8 @@ public:
 	void GetItemPointers(std::vector<const char*>* itemTextures,
 							std::vector<const char*>* itemMeshes,
 							Shader* texturedShader);
+
+	void GetBalloonPointers(const char* balloonTexture, const char* balloonMesh);
 
 	// Gives Kart pointers for storing items it creates
 	/*void GetItemList(std::vector<GameObject*>* gameObjects,

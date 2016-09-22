@@ -27,6 +27,7 @@
 #include "Wall.h"
 #include "MovingItemObject.h"
 #include "Shell.h"
+#include "Balloon.h"
 
 #include <vector>
 

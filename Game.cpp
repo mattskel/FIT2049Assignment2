@@ -70,6 +70,8 @@ bool Game::Initialise(Direct3D* renderer, InputController* input)
 						m_texturedShader);
 	//kart->GetItemList(&m_gameObjects, &m_movingItemObjects);
 	kart->GetObjects(&m_gameObjects, &m_karts, &m_shells, &m_otherItems);
+	kart->GetBalloonPointers("Balloon", "Balloon");
+	kart->InitBalloons();
 	m_gameObjects.push_back(kart);
 	m_karts.push_back(kart);
 
@@ -79,7 +81,7 @@ bool Game::Initialise(Direct3D* renderer, InputController* input)
 			m_texturedShader,
 			Texture::GetTexture("Box"),
 			/*Vector3(i * 30, 0, 0));*/
-			Vector3(MathsHelper::RandomRange(-299, 299), 0, MathsHelper::RandomRange(-299, 299)));
+			Vector3(MathsHelper::RandomRange(-290, 290), 0, MathsHelper::RandomRange(-290, 290)));
 		m_gameObjects.push_back(itemBox);
 		m_itemBoxes.push_back(itemBox);
 	}
@@ -93,6 +95,8 @@ bool Game::Initialise(Direct3D* renderer, InputController* input)
 		enemy->GetItemPointers(&m_itemTextures, &m_itemMeshes, m_texturedShader);
 		enemy->GetObjects(&m_gameObjects, &m_karts, &m_shells, &m_otherItems);
 		enemy->GetItemBoxes(&m_itemBoxes);
+		enemy->GetBalloonPointers("Balloon", "Balloon");
+		enemy->InitBalloons();
 		m_gameObjects.push_back(enemy);
 		m_karts.push_back(enemy);
 	}
@@ -221,6 +225,10 @@ bool Game::LoadTextures()
 		return false;
 	}
 	m_currentItemArray.push_back("BananaIcon");
+
+	// Load Balloon
+	if (!Texture::LoadFromFile(L"Assets/Textures/balloon.png", "Balloon", m_renderer))
+		return false;
 	
 
 	if (!Texture::LoadFromFile(L"Assets/Textures/grass.jpg", "Grass", m_renderer))
@@ -256,6 +264,9 @@ bool Game::LoadMeshes()
 		return false;
 
 	if (!Mesh::LoadFromFile(L"Assets/Meshes/banana.obj", "Banana", m_renderer))
+		return false;
+
+	if (!Mesh::LoadFromFile(L"Assets/Meshes/balloon.obj", "Balloon", m_renderer))
 		return false;
 
 	// push the shell on twice, once for the red, once for the green

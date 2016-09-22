@@ -33,5 +33,5 @@ SpinningObject::~SpinningObject() { }
 
 void SpinningObject::Update(float timestep)
 {
-	m_rotY += m_spinningSpeed * timestep;
+	//m_rotY += m_spinningSpeed * timestep;
 }

@@ -23,6 +23,24 @@ Kart::Kart(Mesh* mesh,
 
 	m_itemValue = std::rand() % 2;
 	m_itemReleased = -1;
+
+}
+
+void Kart::InitBalloons() {
+	// Initialise the balloon list
+	float displacementX = -2.0;
+	float displacementY = 4.0;
+	float displacementZ = -3.0;
+	for (int i = 0; i < 3; i++) {
+		Balloon* balloon = new Balloon(Mesh::GetMesh(m_balloonMesh),
+									m_texturedShader,
+									Texture::GetTexture(m_balloonTexture),
+									Vector3(displacementX, displacementY, displacementZ),
+									this);
+		displacementX += 2.0;
+		m_balloons.push_back(balloon);
+		m_gameObjects->push_back(balloon);
+	}
 }
 
 void Kart::Update(float timestep) {
@@ -51,6 +69,11 @@ void Kart::Update(float timestep) {
 		m_itemValue = -1;
 	}
 
+	// Draw Balloons
+	for (Balloon* balloon : m_balloons) {
+		balloon->Update(timestep);
+	}
+
 	// Move collider
 	m_boundingBox.SetMin(GetPosition() + m_mesh->GetMin());
 	m_boundingBox.SetMax(GetPosition() + m_mesh->GetMax());
@@ -73,6 +96,11 @@ void Kart::GetItemPointers(std::vector<const char*>* itemTextures,
 	m_itemTextures = itemTextures;
 	m_itemMeshes = itemMeshes;
 	m_texturedShader = texturedShader;
+}
+
+void Kart::GetBalloonPointers(const char* balloonTexture, const char* balloonMesh) {
+	m_balloonTexture = balloonTexture;
+	m_balloonMesh = balloonMesh;
 }
 
 /*void Kart::GetItemList(std::vector<GameObject*>* gameObjects,
