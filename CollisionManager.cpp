@@ -329,6 +329,9 @@ void CollisionManager::KartToOtherIterm() {
 			if (Banana* banana = dynamic_cast<Banana*>(otherItem)) {
 				otherItemBounds = banana->GetBounds();
 			}
+			if (ItemBox* badBox = dynamic_cast<ItemBox*>(otherItem)) {
+				otherItemBounds = badBox->GetBounds();
+			}
 
 			bool isColliding = CheckCollision(kartBounds, otherItemBounds);
 			bool wasColliding = ArrayContainCollision(m_previousCollisions, kart, otherItem);
@@ -341,12 +344,15 @@ void CollisionManager::KartToOtherIterm() {
 					if (Banana* banana = dynamic_cast<Banana*>(otherItem)) {
 						banana->OnKartCollisionEnter();
 					}
+					else if (ItemBox* badBox = dynamic_cast<ItemBox*>(otherItem)) {
+						badBox->OnKartCollisionEnter(kart);
+					}
 				}
 			}
-			else {
+			/*else {
 				if (wasColliding) {
 				}
-			}
+			}*/
 		}
 	}
 }

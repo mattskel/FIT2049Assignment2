@@ -34,6 +34,8 @@ Game::~Game() {}
 
 bool Game::Initialise(Direct3D* renderer, InputController* input)
 {
+	m_gameOver = false;
+
 	m_renderer = renderer;	
 	m_input = input;
 
@@ -65,13 +67,14 @@ bool Game::Initialise(Direct3D* renderer, InputController* input)
 		Vector3(0, 0, 0), 
 		m_input);
 	m_playerKart = kart;
-	kart->GetItemPointers(&m_itemTextures,
+	kart->SetItemPointers(&m_itemTextures,
 						&m_itemMeshes,
 						m_texturedShader);
 	//kart->GetItemList(&m_gameObjects, &m_movingItemObjects);
-	kart->GetObjects(&m_gameObjects, &m_karts, &m_shells, &m_otherItems);
-	kart->GetBalloonPointers("Balloon", "Balloon");
+	kart->SetObjects(&m_gameObjects, &m_karts, &m_shells, &m_otherItems);
+	kart->SetBalloonPointers("Balloon", "Balloon");
 	kart->InitBalloons();
+	kart->SetGameObjectIndex(m_gameObjects.size());
 	m_gameObjects.push_back(kart);
 	m_karts.push_back(kart);
 
@@ -87,16 +90,24 @@ bool Game::Initialise(Direct3D* renderer, InputController* input)
 	}
 
 	// Create the enemies
-	for (int i = 0; i < 3; i++) {
+	for (int i = 0; i < 4; i++) {
+
+		int flag = (i == 0) ? 1 : 0;
+		int textureIndex = i;
 		EnemyKart* enemy = new EnemyKart(Mesh::GetMesh("Kart"),
 			m_texturedShader,
-			Texture::GetTexture("RedKart"),
-			Vector3(i*50, 0, i*50 + 100));
-		enemy->GetItemPointers(&m_itemTextures, &m_itemMeshes, m_texturedShader);
-		enemy->GetObjects(&m_gameObjects, &m_karts, &m_shells, &m_otherItems);
-		enemy->GetItemBoxes(&m_itemBoxes);
-		enemy->GetBalloonPointers("Balloon", "Balloon");
+			Texture::GetTexture(m_kartTextures[textureIndex]),
+			Vector3(i*50, 0, i*50 + 100),
+			flag);
+		if (flag == 1) {
+			enemy->SetPlayerKart(m_playerKart);
+		}
+		enemy->SetItemPointers(&m_itemTextures, &m_itemMeshes, m_texturedShader);
+		enemy->SetObjects(&m_gameObjects, &m_karts, &m_shells, &m_otherItems);
+		enemy->SetItemBoxes(&m_itemBoxes);
+		enemy->SetBalloonPointers("Balloon", "Balloon");
 		enemy->InitBalloons();
+		enemy->SetGameObjectIndex(m_gameObjects.size());
 		m_gameObjects.push_back(enemy);
 		m_karts.push_back(enemy);
 	}
@@ -194,6 +205,26 @@ bool Game::LoadTextures()
 	if (!Texture::LoadFromFile(L"Assets/Textures/kart_red.png", "RedKart", m_renderer))
 		return false;
 
+	if (!Texture::LoadFromFile(L"Assets/Textures/kart_blue.png", "BlueKart", m_renderer))
+		return false;
+
+	m_kartTextures.push_back("BlueKart");
+
+	if (!Texture::LoadFromFile(L"Assets/Textures/kart_green.png", "GreenKart", m_renderer))
+		return false;
+
+	m_kartTextures.push_back("GreenKart");
+
+	if (!Texture::LoadFromFile(L"Assets/Textures/kart_orange.png", "OrangeKart", m_renderer))
+		return false;
+
+	m_kartTextures.push_back("OrangeKart");
+
+	if (!Texture::LoadFromFile(L"Assets/Textures/kart_purple.png", "PurpleKart", m_renderer))
+		return false;
+
+	m_kartTextures.push_back("PurpleKart");
+
 	if (!Texture::LoadFromFile(L"Assets/Textures/item_box.png", "Box", m_renderer))
 		return false;
 
@@ -225,6 +256,22 @@ bool Game::LoadTextures()
 		return false;
 	}
 	m_currentItemArray.push_back("BananaIcon");
+
+	// Load BadBox
+	if (!Texture::LoadFromFile(L"Assets/Textures/item_box_bad.png", "BadBox", m_renderer))
+		return false;
+	m_itemTextures.push_back("BadBox");
+	if (!Texture::LoadFromFile(L"Assets/Textures/sprite_bad_box.png", "BadBoxIcon", m_renderer)) {
+		return false;
+	}
+	m_currentItemArray.push_back("BadBoxIcon");
+
+	// Load Star
+	if (!Texture::LoadFromFile(L"Assets/Textures/sprite_star.png", "StarIcon", m_renderer)) {
+		return false;
+	}
+	m_currentItemArray.push_back("StarIcon");
+
 
 	// Load Balloon
 	if (!Texture::LoadFromFile(L"Assets/Textures/balloon.png", "Balloon", m_renderer))
@@ -273,6 +320,8 @@ bool Game::LoadMeshes()
 	m_itemMeshes.push_back("Shell");
 	m_itemMeshes.push_back("Shell");
 	m_itemMeshes.push_back("Banana");
+	m_itemMeshes.push_back("Box");
+
 
 	return true;
 }
@@ -328,49 +377,77 @@ void Game::Gameplay_OnEnter()
 
 void Game::Gameplay_OnUpdate(float timestep)
 {
-	// Update all our gameobjects. What they really are doesn't matter
-	for (unsigned int i = 0; i < m_gameObjects.size(); i++)
-	{
-		m_gameObjects[i]->Update(timestep);
-	}
-
-	// Check for pause
-	if (m_input->GetKeyDown('P')) {
-		m_stateMachine->ChangeState(GameStates::PAUSE_STATE);
-	}
-
-	m_collisionManager->CheckCollisions();
-
-	// Finds all the items that need to be removed from m_gameObjects
-	int index = 0;
-	while (index < m_gameObjects.size()) {
-		int status = m_gameObjects[index]->GetStatus();
-		if (status == 0) {
-			//m_gameObjects[index]->~GameObject();
-			m_gameObjects.erase(m_gameObjects.begin() + index);
+	if (m_playerKart->GetStatus() != 0 && m_karts.size() > 1) {
+		// Update all our gameobjects. What they really are doesn't matter
+		for (unsigned int i = 0; i < m_gameObjects.size(); i++)
+		{
+			int status = m_gameObjects[i]->GetStatus();
+			if (status != 0) {
+				m_gameObjects[i]->Update(timestep);
+			}
 		}
-		index++;
-	}
 
-	index = 0;
-	while (index < m_shells.size()) {
-		int status = m_shells[index]->GetStatus();
-		if (status == 0) {
-			m_shells.erase(m_shells.begin() + index);
+		for (unsigned int i = 0; i < m_shells.size(); i++) {
+			m_shells[i]->Update(timestep);
 		}
-		index++;
-	}
 
-	index = 0;
-	while (index < m_otherItems.size()) {
-		int status = m_otherItems[index]->GetStatus();
-		if (status == 0) {
-			m_otherItems.erase(m_otherItems.begin() + index);
+		for (unsigned int i = 0; i < m_otherItems.size(); i++) {
+			m_otherItems[i]->Update(timestep);
 		}
-		index++;
-	}
 
-	m_currentCam->Update(timestep);
+		// Check for pause
+		if (m_input->GetKeyDown('P')) {
+			m_stateMachine->ChangeState(GameStates::PAUSE_STATE);
+		}
+
+		m_collisionManager->CheckCollisions();
+
+		// Finds all the items that need to be removed from m_gameObjects
+		int index = 0;
+		while (index < m_gameObjects.size()) {
+			int status = m_gameObjects[index]->GetStatus();
+			if (status == 0) {
+				//m_gameObjects[index]->~GameObject();
+				m_gameObjects.erase(m_gameObjects.begin() + index);
+			}
+			index++;
+		}
+
+		index = 0;
+		while (index < m_karts.size()) {
+			int status = m_karts[index]->GetStatus();
+			if (status == 0) {
+				//m_gameObjects[index]->~GameObject();
+				m_karts.erase(m_karts.begin() + index);
+			}
+			index++;
+		}
+
+		index = 0;
+		while (index < m_shells.size()) {
+			int status = m_shells[index]->GetStatus();
+			if (status == 0) {
+				delete m_shells[index];
+				m_shells.erase(m_shells.begin() + index);
+			}
+			index++;
+		}
+
+		index = 0;
+		while (index < m_otherItems.size()) {
+			int status = m_otherItems[index]->GetStatus();
+			if (status == 0) {
+				delete m_otherItems[index];
+				m_otherItems.erase(m_otherItems.begin() + index);
+			}
+			index++;
+		}
+
+		m_currentCam->Update(timestep);
+	}
+	else {
+		m_gameOver = true;
+	}
 }
 
 void Game::Gameplay_OnRender()
@@ -379,6 +456,14 @@ void Game::Gameplay_OnRender()
 	for (unsigned int i = 0; i < m_gameObjects.size(); i++)
 	{
 		m_gameObjects[i]->Render(m_renderer, m_currentCam);
+	}
+
+	for (unsigned int i = 0; i < m_shells.size(); i++) {
+		m_shells[i]->Render(m_renderer, m_currentCam);
+	}
+
+	for (unsigned int i = 0; i < m_otherItems.size(); i++) {
+		m_otherItems[i]->Render(m_renderer, m_currentCam);
 	}
 
 	/*

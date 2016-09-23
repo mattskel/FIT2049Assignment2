@@ -3,6 +3,7 @@
 #include "RedShell.h"
 #include "GreenShell.h"
 #include "Banana.h"
+#include "ItemBox.h"
 
 #include <iostream>
 
@@ -23,6 +24,7 @@ Kart::Kart(Mesh* mesh,
 
 	m_itemValue = std::rand() % 2;
 	m_itemReleased = -1;
+	m_livesRemaining = 3;
 
 }
 
@@ -44,6 +46,7 @@ void Kart::InitBalloons() {
 }
 
 void Kart::Update(float timestep) {
+
 	Vector3 worldForward = Vector3(0, 0, 1);
 
 	Matrix heading = Matrix::CreateRotationY(m_rotY);
@@ -79,6 +82,10 @@ void Kart::Update(float timestep) {
 	m_boundingBox.SetMax(GetPosition() + m_mesh->GetMax());
 
 	PhysicsObject::Update(timestep);
+
+	if (m_livesRemaining == 0) {
+		m_status = 0;
+	}
 }
 
 Vector3 Kart::GetLocalForward() {
@@ -90,7 +97,7 @@ Vector3 Kart::GetLocalForward() {
 	return localForward;
 }
 
-void Kart::GetItemPointers(std::vector<const char*>* itemTextures,
+void Kart::SetItemPointers(std::vector<const char*>* itemTextures,
 	std::vector<const char*>* itemMeshes,
 	Shader* texturedShader) {
 	m_itemTextures = itemTextures;
@@ -98,7 +105,7 @@ void Kart::GetItemPointers(std::vector<const char*>* itemTextures,
 	m_texturedShader = texturedShader;
 }
 
-void Kart::GetBalloonPointers(const char* balloonTexture, const char* balloonMesh) {
+void Kart::SetBalloonPointers(const char* balloonTexture, const char* balloonMesh) {
 	m_balloonTexture = balloonTexture;
 	m_balloonMesh = balloonMesh;
 }
@@ -109,7 +116,7 @@ void Kart::GetBalloonPointers(const char* balloonTexture, const char* balloonMes
 	m_movingItemObjects = movingItemObjects;
 }*/
 
-void Kart::GetObjects(std::vector<GameObject*>* gameObjects,
+void Kart::SetObjects(std::vector<GameObject*>* gameObjects,
 	std::vector<Kart*>* karts,
 	std::vector<Shell*>* shells,
 	std::vector<GameObject*>* otherItems) {
@@ -127,13 +134,13 @@ void Kart::ItemReleased() {
 		switch (m_itemValue) {
 		case 0:
 		{
-			GreenShell* greenShell = new GreenShell(Mesh::GetMesh((*m_itemMeshes)[1]),
+			GreenShell* greenShell = new GreenShell(Mesh::GetMesh((*m_itemMeshes)[0]),
 				m_texturedShader,
 				Texture::GetTexture((*m_itemTextures)[m_itemValue]),
 				GetPosition(),
 				GetLocalForward());
 			m_shells->push_back(greenShell);
-			m_gameObjects->push_back(greenShell);
+			//m_gameObjects->push_back(greenShell);
 			break;
 		}
 		case 1:
@@ -146,21 +153,39 @@ void Kart::ItemReleased() {
 				m_rotY,
 				m_karts);
 			m_shells->push_back(redShell);
-			m_gameObjects->push_back(redShell);
+			//m_gameObjects->push_back(redShell);
 			break;
 		}
 		case 2:
 		{
-			Banana* banana = new Banana(Mesh::GetMesh((*m_itemMeshes)[1]),
+			Banana* banana = new Banana(Mesh::GetMesh((*m_itemMeshes)[2]),
 										m_texturedShader,
 										Texture::GetTexture((*m_itemTextures)[m_itemValue]),
 										GetPosition() - 10.0 * GetLocalForward());
 			m_otherItems->push_back(banana);
-			m_gameObjects->push_back(banana);
+			//m_gameObjects->push_back(banana);
+			break;
+		}
+		case 3:
+		{
+			ItemBox* badBox = new ItemBox(Mesh::GetMesh((*m_itemMeshes)[3]),
+											m_texturedShader,
+											Texture::GetTexture((*m_itemTextures)[m_itemValue]),
+											GetPosition() - 10.0 * GetLocalForward());
+			badBox->SetBadBox();
+			m_otherItems->push_back(badBox);
 			break;
 		}
 		}
 		m_itemValue = -1;
+	}
+}
+
+void Kart::LifeLost() {
+	if (m_livesRemaining > 0) {
+		Balloon* balloon = m_balloons[m_livesRemaining - 1];
+		balloon->SetLifeLost();
+		m_livesRemaining -= 1;
 	}
 }
 
@@ -240,33 +265,7 @@ void Kart::OnWallCollisionExit(Wall* other) {
 	//OutputDebugString("OnWallCollisionExit\n");
 }
 
-/*void Kart::OnItemObjectCollisionEnter(MovingItemObject* other) {
-	Vector3 v1 = GetLocalForward();
-	Vector3 v2 = other->GetLocalForward();
-
-	Vector3 localNormal = GetPosition() - other->GetPosition();
-	Matrix heading = Matrix::CreateRotationY(m_rotY);
-
-	float normalLength = localNormal.Length();
-
-	// localNormal.normalize()
-
-	Vector3 unitNormal = Vector3(localNormal.x / normalLength,
-		localNormal.y / normalLength,
-		localNormal.z / normalLength);
-
-	// Should change this to velocity...
-	Vector3 velocity2 = other->GetVelocity();
-
-	float collisionForce = (velocity2.x * unitNormal.x + velocity2.z * unitNormal.z);
-	Vector3 forceVector = Vector3(velocity2.x * unitNormal.x, 0, velocity2.z * unitNormal.z);
-
-	ApplyForce(4.0 * velocity2);
-}*/
-
 void Kart::OnShellCollisionEnter(Shell* other) {
-	Vector3 v1 = GetLocalForward();
-	Vector3 v2 = other->GetLocalForward();
 
 	Vector3 localNormal = GetPosition() - other->GetPosition();
 	Matrix heading = Matrix::CreateRotationY(m_rotY);
@@ -279,15 +278,20 @@ void Kart::OnShellCollisionEnter(Shell* other) {
 		localNormal.y / normalLength,
 		localNormal.z / normalLength);
 
-	Vector3 velocity2 = other->GetVelocity();
+	Vector3 otherVelocity = other->GetVelocity();
 
-	float collisionForce = (velocity2.x * unitNormal.x + velocity2.z * unitNormal.z);
-	Vector3 forceVector = Vector3(velocity2.x * unitNormal.x, 0, velocity2.z * unitNormal.z);
+	float collisionForce = (otherVelocity.x * unitNormal.x + otherVelocity.z * unitNormal.z);
+	Vector3 forceVector = Vector3(otherVelocity.x * unitNormal.x, 0, otherVelocity.z * unitNormal.z);
 
-	ApplyForce(4.0 * velocity2);
+	ApplyForce(2.0 * otherVelocity);
+
+	LifeLost();
 }
 
 void Kart::OnOtherItemCollisionEnter() {
+
 	Vector3 velocity = GetVelocity();
-	ApplyForce(-4.0 * velocity);
+	ApplyForce(-2.0 * velocity);
+
+	LifeLost();
 }

@@ -29,8 +29,12 @@ protected:
 
 	CBoundingBox m_boundingBox;
 
+	int m_livesRemaining;
+
 	int m_itemValue;
 	int m_itemReleased;
+
+	int m_gameObjectIndex;
 
 	// Kart will have pointers to everything required to build its own Items
 	std::vector<const char*>* m_itemTextures;
@@ -70,24 +74,30 @@ public:
 	int GetItemValue() { return m_itemValue; }
 
 	// Gives Kart all the relevant pointers for construction an item
-	void GetItemPointers(std::vector<const char*>* itemTextures,
+	void SetItemPointers(std::vector<const char*>* itemTextures,
 							std::vector<const char*>* itemMeshes,
 							Shader* texturedShader);
 
-	void GetBalloonPointers(const char* balloonTexture, const char* balloonMesh);
+	void SetBalloonPointers(const char* balloonTexture, const char* balloonMesh);
 
 	// Gives Kart pointers for storing items it creates
 	/*void GetItemList(std::vector<GameObject*>* gameObjects,
 						std::vector<MovingItemObject*>* movingItemObjects);*/
 
-	void GetObjects(std::vector<GameObject*>* gameObjects,
+	void SetObjects(std::vector<GameObject*>* gameObjects,
 					std::vector<Kart*>* karts,
 					std::vector<Shell*>* shells,
 					std::vector<GameObject*>* otherItems);
 
+	void SetGameObjectIndex(int gameObjectIndex) { m_gameObjectIndex = gameObjectIndex; }
+
+	int GetGameObjectIndex() { return m_gameObjectIndex; }
+
 	// Kart executes this when an object is fired
 	// Constructs the item object and then adds it to the item lists
 	void ItemReleased();
+
+	void LifeLost();
 
 	void OnKartCollisionEnter(Kart* other);
 	void OnKartCollisionStay(Kart* other);

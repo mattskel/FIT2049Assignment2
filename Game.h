@@ -66,6 +66,8 @@ private:
 
 	Kart* m_playerKart;
 
+	boolean m_gameOver;
+
 	SpriteBatch* m_spriteBatch;
 	SpriteFont* m_arialFont12;
 	SpriteFont* m_arialFont18;
@@ -86,6 +88,8 @@ private:
 
 	std::vector<const char*> m_itemTextures;
 	std::vector<const char*> m_itemMeshes;
+
+	std::vector<const char*> m_kartTextures;
 
 	// Splitting initialisation up into several steps
 	void InitStates();

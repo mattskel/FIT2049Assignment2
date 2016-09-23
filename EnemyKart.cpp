@@ -6,7 +6,8 @@
 EnemyKart::EnemyKart(Mesh* mesh,
 	Shader* shader,
 	Texture* texture,
-	Vector3 position) :
+	Vector3 position,
+	int flag) :
 	Kart(mesh,shader,texture,position,NULL) {
 
 	
@@ -17,8 +18,15 @@ EnemyKart::EnemyKart(Mesh* mesh,
 	m_boundingBox = CBoundingBox(GetPosition() + m_mesh->GetMin(),
 		GetPosition() + m_mesh->GetMax());
 	
+	if (flag == 0) {
+		m_chasingPlayer = false;
+		m_targetPosition = GetRandomPosition();
+	}
+	else {
+		m_chasingPlayer = true;
+	}
+
 	m_targetIsItemBox = false;
-	m_targetPosition = GetRandomPosition();
 	m_previousItemBox = NULL;
 }
 
@@ -30,8 +38,14 @@ void EnemyKart::Update(float timestep) {
 		ItemReleased();
 	}
 
-	if (Vector3::DistanceSquared(GetPosition(), m_targetPosition) <= 2.0f) {
-		m_targetPosition = GetRandomPosition();
+	if (m_chasingPlayer && !m_targetIsItemBox) {
+		m_targetPosition = m_playerKart->GetPosition();
+	}
+
+	if (Vector3::DistanceSquared(GetPosition(), m_targetPosition) <= 5.0f) {
+		if (!m_chasingPlayer) {
+			m_targetPosition = GetRandomPosition();
+		}
 		m_targetIsItemBox = false;
 	}
 	else {
@@ -97,6 +111,10 @@ void EnemyKart::Update(float timestep) {
 	//std::cout << m_boundingBox.GetMax().x << " " << m_boundingBox.GetMax().y << " " << m_boundingBox.GetMax().z << std::endl;
 
 	PhysicsObject::Update(timestep);
+
+	if (m_livesRemaining == 0) {
+		m_status = 0;
+	}
 }
 
 Vector3 EnemyKart::GetRandomPosition() {

@@ -19,14 +19,19 @@ private:
 	std::vector<ItemBox*>* m_itemBoxes;
 	boolean m_targetIsItemBox;
 	ItemBox* m_previousItemBox;		// To make sure we don't return to the previous ItemBox
+	boolean m_chasingPlayer;	// Determine if we are chasing the player or not
+	Kart* m_playerKart;
 
 public:
 	EnemyKart(Mesh* mesh,
 		Shader* shader,
 		Texture* texture,
-		Vector3 position);
+		Vector3 position,
+		int flag);
 
-	void GetItemBoxes(std::vector<ItemBox*>* itemBoxes) { m_itemBoxes = itemBoxes; }
+	void SetItemBoxes(std::vector<ItemBox*>* itemBoxes) { m_itemBoxes = itemBoxes; }
+	void SetPlayerKart(Kart* playerKart) { m_playerKart = playerKart; }
+	void SetChasingPlayer() { m_chasingPlayer = true; }
 
 	void Update(float timestep);
 
