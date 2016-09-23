@@ -12,7 +12,7 @@ EnemyKart::EnemyKart(Mesh* mesh,
 
 	
 	m_moveSpeed = 3.0f; // Alter these to change the speed
-	m_turnSpeed = 2.0f;
+	m_turnSpeed = 2.0f;	// Alter turn speed
 	m_frictionAmount = 4.0f;
 
 	m_boundingBox = CBoundingBox(GetPosition() + m_mesh->GetMin(),
