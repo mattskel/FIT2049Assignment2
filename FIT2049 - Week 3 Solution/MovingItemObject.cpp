@@ -29,7 +29,6 @@ void MovingItemObject::Update(float timestep) {
 Vector3 MovingItemObject::GetLocalForward() {
 
 	Vector3 worldForward = Vector3(0, 0, 1);
-
 	Matrix heading = Matrix::CreateRotationY(m_rotY);
 	Vector3 localForward = Vector3::TransformNormal(worldForward, heading);
 

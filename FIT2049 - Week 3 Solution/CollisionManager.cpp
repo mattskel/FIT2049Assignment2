@@ -1,14 +1,19 @@
 #include "CollisionManager.h"
+#include "Banana.h"
 
 #include <iostream>
 
+/*CollisionManager::CollisionManager(std::vector<Kart*>* karts, std::vector<ItemBox*>* itemBoxes, std::vector<Wall*>* walls,
+	std::vector<MovingItemObject*>* movingItemObjects)*/
 CollisionManager::CollisionManager(std::vector<Kart*>* karts, std::vector<ItemBox*>* itemBoxes, std::vector<Wall*>* walls,
-	std::vector<MovingItemObject*>* movingItemObjects)
+	std::vector<Shell*>* shells, std::vector<GameObject*>* otherItems)
 {
 	m_karts = karts;
 	m_itemBoxes = itemBoxes;
 	m_walls = walls;
-	m_movingItemObjects = movingItemObjects;
+	//m_movingItemObjects = movingItemObjects;
+	m_shells = shells;
+	m_otherItems = otherItems;
 
 	// Clear our arrays to 0 (NULL)
 	memset(m_currentCollisions, 0, sizeof(m_currentCollisions));
@@ -29,7 +34,13 @@ void CollisionManager::CheckCollisions()
 	KartToWall();
 
 	// Check kart to item
-	KartToItem();
+	//KartToItem();
+
+	KartToShell();
+
+	ShellToWall();
+
+	KartToOtherIterm();
 
 	// Move all current collisions into previous
 	memcpy(m_previousCollisions, m_currentCollisions, sizeof(m_currentCollisions));
@@ -209,7 +220,7 @@ void CollisionManager::KartToWall() {
 
 }
 
-void CollisionManager::KartToItem() {
+/*void CollisionManager::KartToItem() {
 	for (unsigned int i = 0; i < m_karts->size(); i++) {
 		for (unsigned int j = 0; j < m_movingItemObjects->size(); j++) {
 
@@ -236,6 +247,112 @@ void CollisionManager::KartToItem() {
 				if (wasColliding) {
 				}
 			}
+		}
+	}
+}*/
+
+void CollisionManager::KartToShell() {
+	for (unsigned int i = 0; i < m_karts->size(); i++) {
+		for (unsigned int j = 0; j < m_shells->size(); j++) {
+
+			Kart* kart = (*m_karts)[i];
+			Shell* shell = (*m_shells)[j];
+
+			CBoundingBox kartBounds = kart->GetBounds();
+			CBoundingBox shellBounds = shell->GetBounds();
+
+			bool isColliding = CheckCollision(kartBounds, shellBounds);
+			bool wasColliding = ArrayContainCollision(m_previousCollisions, kart, shell);
+
+			if (isColliding) {
+				AddCollision(kart, shell);
+				if (wasColliding) {}
+				else {
+					OutputDebugString("COLLIDING\n");
+					kart->OnShellCollisionEnter(shell);
+					shell->OnKartCollisionEnter();
+				}
+			}
+			else {
+				if (wasColliding) {
+				}
+			}
+		}
+	}
+}
+
+void CollisionManager::ShellToWall() {
+
+	
+	for (unsigned int i = 0; i < m_shells->size(); i++) {
+		for (unsigned int j = 0; j < m_walls->size(); j++) {
+
+			Shell* shell = (*m_shells)[i];
+			Wall* wall = (*m_walls)[j];
+
+			CBoundingBox shellBounds = shell->GetBounds();
+			CBoundingBox wallBounds = wall->GetBounds();
+
+			// Are they colliding this frame?
+			bool isColliding = CheckCollision(shellBounds, wallBounds);
+
+			// Were they colliding last frame?
+			bool wasColliding = ArrayContainCollision(m_previousCollisions, shell, wall);
+
+			if (isColliding) {
+				// Register the collision
+				AddCollision(shell, wall);
+				if (wasColliding) {
+				}
+				else {
+					shell->OnWallCollisionEnter(wall);
+				}
+			}
+			else {
+				if (wasColliding) {
+				}
+			}
+		}
+	}
+}
+
+void CollisionManager::KartToOtherIterm() {
+	for (unsigned int i = 0; i < m_karts->size(); i++) {
+		for (unsigned int j = 0; j < m_otherItems->size(); j++) {
+
+			Kart* kart = (*m_karts)[i];
+			GameObject* otherItem = (*m_otherItems)[j];
+
+			CBoundingBox kartBounds = kart->GetBounds();
+			//CBoundingBox otherItemBounds = otherItem->GetBounds();
+			CBoundingBox otherItemBounds;
+			if (Banana* banana = dynamic_cast<Banana*>(otherItem)) {
+				otherItemBounds = banana->GetBounds();
+			}
+			if (ItemBox* badBox = dynamic_cast<ItemBox*>(otherItem)) {
+				otherItemBounds = badBox->GetBounds();
+			}
+
+			bool isColliding = CheckCollision(kartBounds, otherItemBounds);
+			bool wasColliding = ArrayContainCollision(m_previousCollisions, kart, otherItem);
+
+			if (isColliding) {
+				AddCollision(kart, otherItem);
+				if (wasColliding) {}
+				else {
+					kart->OnOtherItemCollisionEnter();
+					if (Banana* banana = dynamic_cast<Banana*>(otherItem)) {
+						banana->OnKartCollisionEnter();
+					}
+					else if (ItemBox* badBox = dynamic_cast<ItemBox*>(otherItem)) {
+						badBox->OnKartCollisionEnter(kart);
+					}
+				}
+			}
+			/*else {
+				if (wasColliding) {
+				}
+			}*/
 		}
 	}
 }

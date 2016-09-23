@@ -26,6 +26,8 @@
 #include "EnemyKart.h"
 #include "Wall.h"
 #include "MovingItemObject.h"
+#include "Shell.h"
+#include "Balloon.h"
 
 #include <vector>
 
@@ -40,6 +42,7 @@ private:
 		MENU_STATE,
 		GAMEPLAY_STATE,
 		PAUSE_STATE,
+		GAMEOVER_STATE,
 		STATE_COUNT
 	};
 
@@ -57,10 +60,16 @@ private:
 	std::vector<ItemBox*> m_itemBoxes;
 	std::vector<Wall*> m_walls;
 
+	// Items
 	std::vector<MovingItemObject*> m_movingItemObjects;
-
+	std::vector<Shell*> m_shells;
+	std::vector<GameObject*> m_otherItems; // Bananas and BadItems
 
 	Kart* m_playerKart;
+
+	boolean m_gameOver;
+	boolean m_newGame;
+	boolean m_playerWin;
 
 	SpriteBatch* m_spriteBatch;
 	SpriteFont* m_arialFont12;
@@ -83,6 +92,8 @@ private:
 	std::vector<const char*> m_itemTextures;
 	std::vector<const char*> m_itemMeshes;
 
+	std::vector<const char*> m_kartTextures;
+
 	// Splitting initialisation up into several steps
 	void InitStates();
 	bool InitShaders();
@@ -95,6 +106,7 @@ private:
 	void DrawGameUI();
 	void DrawMenuUI();
 	void DrawPauseUI();
+	void DrawGameOverUI();
 
 	// Every state in our game will have four callbacks
 	// We register these with the StateMachine and it calls them for us
@@ -114,6 +126,11 @@ private:
 	void Pause_OnUpdate(float timestep);
 	void Pause_OnRender();
 	void Pause_OnExit();
+
+	void GameOver_OnEnter();
+	void GameOver_OnUpdate(float timestep);
+	void GameOver_OnRender();
+	void GameOver_OnExit();
 
 public:
 	Game();	

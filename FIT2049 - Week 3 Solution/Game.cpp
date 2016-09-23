@@ -10,6 +10,8 @@
 #include "SurveillanceCamera.h"
 #include "ThirdPersonCamera.h"
 
+#include "MathsHelper.h"
+
 #include <iostream>
 
 Game::Game()
@@ -32,6 +34,8 @@ Game::~Game() {}
 
 bool Game::Initialise(Direct3D* renderer, InputController* input)
 {
+	m_gameOver = false;
+
 	m_renderer = renderer;	
 	m_input = input;
 
@@ -50,7 +54,12 @@ bool Game::Initialise(Direct3D* renderer, InputController* input)
 
 	// TODO
 	// Need to give the collisions manager the moving items as well
-	m_collisionManager = new CollisionManager(&m_karts, &m_itemBoxes, &m_walls, &m_movingItemObjects);
+	//m_collisionManager = new CollisionManager(&m_karts, &m_itemBoxes, &m_walls, &m_movingItemObjects);
+	m_collisionManager = new CollisionManager(&m_karts, 
+											&m_itemBoxes, 
+											&m_walls, 
+											&m_shells,
+											&m_otherItems);
 
 	Kart* kart = new Kart(Mesh::GetMesh("Kart"), 
 		m_texturedShader, 
@@ -58,27 +67,48 @@ bool Game::Initialise(Direct3D* renderer, InputController* input)
 		Vector3(0, 0, 0), 
 		m_input);
 	m_playerKart = kart;
-	kart->GetItemPointers(&m_itemTextures,&m_itemMeshes,m_texturedShader);
-	kart->GetItemList(&m_gameObjects, &m_movingItemObjects);
+	kart->SetItemPointers(&m_itemTextures,
+						&m_itemMeshes,
+						m_texturedShader);
+	//kart->GetItemList(&m_gameObjects, &m_movingItemObjects);
+	kart->SetObjects(&m_gameObjects, &m_karts, &m_shells, &m_otherItems);
+	kart->SetItemBoxes(&m_itemBoxes);
+	kart->SetBalloonPointers("Balloon", "Balloon");
+	kart->InitBalloons();
+	kart->SetGameObjectIndex(m_gameObjects.size());
 	m_gameObjects.push_back(kart);
 	m_karts.push_back(kart);
 
 	// Create item boxes
-	for (int i = 0; i < 3; i++) {
+	for (int i = 0; i < 4; i++) {
 		ItemBox* itemBox = new ItemBox(Mesh::GetMesh("Box"),
 			m_texturedShader,
 			Texture::GetTexture("Box"),
-			Vector3(i * 30, 0, 0));
+			/*Vector3(i * 30, 0, 0));*/
+			Vector3(MathsHelper::RandomRange(-290, 290), 0, MathsHelper::RandomRange(-290, 290)));
 		m_gameObjects.push_back(itemBox);
 		m_itemBoxes.push_back(itemBox);
 	}
 
 	// Create the enemies
-	for (int i = 0; i < 3; i++) {
+	for (int i = 0; i < 4; i++) {
+
+		int flag = (i == 0) ? 1 : 0;
+		int textureIndex = i;
 		EnemyKart* enemy = new EnemyKart(Mesh::GetMesh("Kart"),
 			m_texturedShader,
-			Texture::GetTexture("RedKart"),
-			Vector3(i*50, 0, i*50 + 100));
+			Texture::GetTexture(m_kartTextures[textureIndex]),
+			Vector3(i*50, 0, i*50 + 100),
+			flag);
+		if (flag == 1) {
+			enemy->SetPlayerKart(m_playerKart);
+		}
+		enemy->SetItemPointers(&m_itemTextures, &m_itemMeshes, m_texturedShader);
+		enemy->SetObjects(&m_gameObjects, &m_karts, &m_shells, &m_otherItems);
+		enemy->SetItemBoxes(&m_itemBoxes);
+		enemy->SetBalloonPointers("Balloon", "Balloon");
+		enemy->InitBalloons();
+		enemy->SetGameObjectIndex(m_gameObjects.size());
 		m_gameObjects.push_back(enemy);
 		m_karts.push_back(enemy);
 	}
@@ -95,22 +125,22 @@ bool Game::Initialise(Direct3D* renderer, InputController* input)
 	// Create the four walls for collisions
 
 	Wall* northWall = new Wall();
-	northWall->SetBounds(CBoundingBox(Vector3(-300,0,300),Vector3(300,0,320)));
+	northWall->SetBounds(CBoundingBox(Vector3(-300,0,300),Vector3(300,10,320)));
 	northWall->SetFace(Vector3(0, 0, -1));
 	m_walls.push_back(northWall);
 
 	Wall* southWall = new Wall();
-	southWall->SetBounds(CBoundingBox(Vector3(-300, 0, -320), Vector3(300, 0, -300)));
+	southWall->SetBounds(CBoundingBox(Vector3(-300, 0, -320), Vector3(300, 10, -300)));
 	southWall->SetFace(Vector3(0, 0, 1));
 	m_walls.push_back(southWall);
 
 	Wall* eastWall = new Wall();
-	eastWall->SetBounds(CBoundingBox(Vector3(-320, 0, -300), Vector3(-300, 0, 300)));
+	eastWall->SetBounds(CBoundingBox(Vector3(-320, 0, -300), Vector3(-300, 10, 300)));
 	eastWall->SetFace(Vector3(1, 0, 0));
 	m_walls.push_back(eastWall);
 
 	Wall* westWall = new Wall();
-	westWall->SetBounds(CBoundingBox(Vector3(300, 0, -300), Vector3(320, 0, 300)));
+	westWall->SetBounds(CBoundingBox(Vector3(300, 0, -300), Vector3(320, 10, 300)));
 	westWall->SetFace(Vector3(-1, 0, 0));
 	m_walls.push_back(westWall);
 
@@ -147,6 +177,13 @@ void Game::InitStates()
 		&Game::Pause_OnRender,
 		&Game::Pause_OnExit);
 
+	// GameOver
+	m_stateMachine->RegisterState(GameStates::GAMEOVER_STATE,
+		&Game::GameOver_OnEnter,
+		&Game::GameOver_OnUpdate,
+		&Game::GameOver_OnRender,
+		&Game::GameOver_OnExit);
+
 	// Initialise m_stateMachine to MENUSTATE
 	m_stateMachine->ChangeState(GameStates::MENU_STATE);
 }
@@ -176,6 +213,26 @@ bool Game::LoadTextures()
 	if (!Texture::LoadFromFile(L"Assets/Textures/kart_red.png", "RedKart", m_renderer))
 		return false;
 
+	if (!Texture::LoadFromFile(L"Assets/Textures/kart_blue.png", "BlueKart", m_renderer))
+		return false;
+
+	m_kartTextures.push_back("BlueKart");
+
+	if (!Texture::LoadFromFile(L"Assets/Textures/kart_green.png", "GreenKart", m_renderer))
+		return false;
+
+	m_kartTextures.push_back("GreenKart");
+
+	if (!Texture::LoadFromFile(L"Assets/Textures/kart_orange.png", "OrangeKart", m_renderer))
+		return false;
+
+	m_kartTextures.push_back("OrangeKart");
+
+	if (!Texture::LoadFromFile(L"Assets/Textures/kart_purple.png", "PurpleKart", m_renderer))
+		return false;
+
+	m_kartTextures.push_back("PurpleKart");
+
 	if (!Texture::LoadFromFile(L"Assets/Textures/item_box.png", "Box", m_renderer))
 		return false;
 
@@ -191,16 +248,42 @@ bool Game::LoadTextures()
 	m_currentItemArray.push_back("GreenShellIcon");
 
 	// Load the red shell
-	
 	if (!Texture::LoadFromFile(L"Assets/Textures/shell_red.png", "RedShell", m_renderer))
 		return false;
-
 	m_itemTextures.push_back("RedShell");
-
 	if (!Texture::LoadFromFile(L"Assets/Textures/sprite_red_shell.png", "RedShellIcon", m_renderer)) {
 		return false;
 	}
 	m_currentItemArray.push_back("RedShellIcon");
+
+	// Load Banana
+	if(!Texture::LoadFromFile(L"Assets/Textures/banana.png", "Banana", m_renderer))
+		return false;
+	m_itemTextures.push_back("Banana");
+	if (!Texture::LoadFromFile(L"Assets/Textures/sprite_banana.png", "BananaIcon", m_renderer)) {
+		return false;
+	}
+	m_currentItemArray.push_back("BananaIcon");
+
+	// Load BadBox
+	if (!Texture::LoadFromFile(L"Assets/Textures/item_box_bad.png", "BadBox", m_renderer))
+		return false;
+	m_itemTextures.push_back("BadBox");
+	if (!Texture::LoadFromFile(L"Assets/Textures/sprite_bad_box.png", "BadBoxIcon", m_renderer)) {
+		return false;
+	}
+	m_currentItemArray.push_back("BadBoxIcon");
+
+	// Load Star
+	if (!Texture::LoadFromFile(L"Assets/Textures/sprite_star.png", "StarIcon", m_renderer)) {
+		return false;
+	}
+	m_currentItemArray.push_back("StarIcon");
+
+
+	// Load Balloon
+	if (!Texture::LoadFromFile(L"Assets/Textures/balloon.png", "Balloon", m_renderer))
+		return false;
 	
 
 	if (!Texture::LoadFromFile(L"Assets/Textures/grass.jpg", "Grass", m_renderer))
@@ -235,9 +318,18 @@ bool Game::LoadMeshes()
 	if (!Mesh::LoadFromFile(L"Assets/Meshes/shell.obj", "Shell", m_renderer))
 		return false;
 
+	if (!Mesh::LoadFromFile(L"Assets/Meshes/banana.obj", "Banana", m_renderer))
+		return false;
+
+	if (!Mesh::LoadFromFile(L"Assets/Meshes/balloon.obj", "Balloon", m_renderer))
+		return false;
+
 	// push the shell on twice, once for the red, once for the green
 	m_itemMeshes.push_back("Shell");
 	m_itemMeshes.push_back("Shell");
+	m_itemMeshes.push_back("Banana");
+	m_itemMeshes.push_back("Box");
+
 
 	return true;
 }
@@ -296,7 +388,18 @@ void Game::Gameplay_OnUpdate(float timestep)
 	// Update all our gameobjects. What they really are doesn't matter
 	for (unsigned int i = 0; i < m_gameObjects.size(); i++)
 	{
-		m_gameObjects[i]->Update(timestep);
+		int status = m_gameObjects[i]->GetStatus();
+		if (status != 0) {
+			m_gameObjects[i]->Update(timestep);
+		}
+	}
+
+	for (unsigned int i = 0; i < m_shells.size(); i++) {
+		m_shells[i]->Update(timestep);
+	}
+
+	for (unsigned int i = 0; i < m_otherItems.size(); i++) {
+		m_otherItems[i]->Update(timestep);
 	}
 
 	// Check for pause
@@ -318,15 +421,46 @@ void Game::Gameplay_OnUpdate(float timestep)
 	}
 
 	index = 0;
-	while (index < m_movingItemObjects.size()) {
-		int status = m_movingItemObjects[index]->GetStatus();
+	while (index < m_karts.size()) {
+		int status = m_karts[index]->GetStatus();
 		if (status == 0) {
-			m_movingItemObjects.erase(m_movingItemObjects.begin() + index);
+			//m_gameObjects[index]->~GameObject();
+			m_karts.erase(m_karts.begin() + index);
+		}
+		index++;
+	}
+
+	index = 0;
+	while (index < m_shells.size()) {
+		int status = m_shells[index]->GetStatus();
+		if (status == 0) {
+			delete m_shells[index];
+			m_shells.erase(m_shells.begin() + index);
+		}
+		index++;
+	}
+
+	index = 0;
+	while (index < m_otherItems.size()) {
+		int status = m_otherItems[index]->GetStatus();
+		if (status == 0) {
+			delete m_otherItems[index];
+			m_otherItems.erase(m_otherItems.begin() + index);
 		}
 		index++;
 	}
 
 	m_currentCam->Update(timestep);
+
+	if (m_playerKart->GetStatus() == 0 || m_karts.size() <= 1) {
+		if (m_playerKart->GetStatus() == 0) {
+			m_playerWin = false;
+		}
+		else {
+			m_playerWin = true;
+		}
+		m_stateMachine->ChangeState(GameStates::GAMEOVER_STATE);
+	}
 }
 
 void Game::Gameplay_OnRender()
@@ -335,6 +469,14 @@ void Game::Gameplay_OnRender()
 	for (unsigned int i = 0; i < m_gameObjects.size(); i++)
 	{
 		m_gameObjects[i]->Render(m_renderer, m_currentCam);
+	}
+
+	for (unsigned int i = 0; i < m_shells.size(); i++) {
+		m_shells[i]->Render(m_renderer, m_currentCam);
+	}
+
+	for (unsigned int i = 0; i < m_otherItems.size(); i++) {
+		m_otherItems[i]->Render(m_renderer, m_currentCam);
 	}
 
 	/*
@@ -383,6 +525,16 @@ void Game::Pause_OnRender() {
 void Game::Pause_OnExit() {
 	OutputDebugString("Pause OnExit\n");
 }
+
+void Game::GameOver_OnEnter() {}
+
+void Game::GameOver_OnUpdate(float timestep) {}
+
+void Game::GameOver_OnRender(){
+	Gameplay_OnRender();
+	DrawGameOverUI();
+}
+void Game::GameOver_OnExit(){}
 
 void Game::DrawGameUI()
 {
@@ -433,6 +585,27 @@ void Game::DrawPauseUI() {
 
 	m_arialFont18->DrawString(m_spriteBatch, L"Pause",
 		Vector2(470, 200), Color(1, 1, 1), 0, Vector2(0, 0));
+
+	m_spriteBatch->End();
+}
+
+void Game::DrawGameOverUI() {
+
+	m_renderer->SetCurrentShader(NULL);
+
+	CommonStates states(m_renderer->GetDevice());
+	m_spriteBatch->Begin(SpriteSortMode_Deferred, states.NonPremultiplied());
+
+	m_arialFont18->DrawString(m_spriteBatch, L"Game Over",
+		Vector2(470, 200), Color(1, 1, 1), 0, Vector2(0, 0));
+	if (m_playerWin) {
+		m_arialFont18->DrawString(m_spriteBatch, L"You Win!",
+			Vector2(470, 300), Color(1, 1, 1), 0, Vector2(0, 0));
+	}
+	else {
+		m_arialFont18->DrawString(m_spriteBatch, L"You Lose!",
+			Vector2(470, 300), Color(1, 1, 1), 0, Vector2(0, 0));
+	}
 
 	m_spriteBatch->End();
 }

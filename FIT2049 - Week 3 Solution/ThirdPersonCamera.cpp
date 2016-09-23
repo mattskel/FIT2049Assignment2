@@ -22,8 +22,14 @@ void ThirdPersonCamera::Update(float timestep) {
 		// target position in header
 		// not where it is, where it wants to be
 
+		/*m_currentPosition = Vector3::Lerp(m_currentPosition,
+			m_targetPosition,
+			m_moveSpeed*timestep);*/
 
-		SetPosition(m_objectToFollow->GetPosition() + rotatedOffset);
+		//SetPosition(m_objectToFollow->GetPosition() + rotatedOffset);
+		SetPosition(Vector3::Lerp(GetPosition(),
+			m_objectToFollow->GetPosition() + rotatedOffset,
+			timestep * 3.0));
 	}
 	Camera::Update(timestep);
 }

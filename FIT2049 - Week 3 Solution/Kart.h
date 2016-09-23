@@ -6,12 +6,16 @@
 #include "ItemBox.h"
 #include "Wall.h"
 #include "MovingItemObject.h"
+#include "Shell.h"
+#include "Balloon.h"
+//#include "RedShell.h"
 
 #include <vector>
 
 // Forward declare ItemBox
 class ItemBox;
 class MovingItemObject;
+class Shell;
 
 class Kart : public PhysicsObject
 {
@@ -25,18 +29,32 @@ protected:
 
 	CBoundingBox m_boundingBox;
 
+	int m_livesRemaining;
+	boolean m_invincible;
+	int m_invincibleStart;
+
 	int m_itemValue;
 	int m_itemReleased;
+
+	int m_gameObjectIndex;
 
 	// Kart will have pointers to everything required to build its own Items
 	std::vector<const char*>* m_itemTextures;
 	std::vector<const char*>* m_itemMeshes;
+	const char* m_balloonTexture;
+	const char* m_balloonMesh;
 	Shader* m_texturedShader;
 
+	ItemBox* m_previousItemBox;		// To make sure we don't return to the previous ItemBox, for enemies
 
 	// Kart needs to store the items it creates somewhere
 	std::vector<GameObject*>* m_gameObjects;
-	std::vector<MovingItemObject*>* m_movingItemObjects;
+	//std::vector<MovingItemObject*>* m_movingItemObjects;
+	std::vector<Kart*>* m_karts;	// Need a pointer to other karts for RedShell
+	std::vector<Shell*>* m_shells;
+	std::vector<GameObject*>* m_otherItems;
+	std::vector<Balloon*> m_balloons;
+	std::vector<ItemBox*>* m_itemBoxes;
 
 	// Need to know where to put on item after it's been shot
 	//std::vector<MovingItemObject*>* m_movingItems;
@@ -48,6 +66,8 @@ public:
 		Vector3 position,
 		InputController* input);
 
+	void InitBalloons();
+
 	void Update(float timestep);
 
 	CBoundingBox GetBounds() { return m_boundingBox; }
@@ -58,17 +78,31 @@ public:
 	int GetItemValue() { return m_itemValue; }
 
 	// Gives Kart all the relevant pointers for construction an item
-	void GetItemPointers(std::vector<const char*>* itemTextures,
+	void SetItemPointers(std::vector<const char*>* itemTextures,
 							std::vector<const char*>* itemMeshes,
 							Shader* texturedShader);
 
+	void SetBalloonPointers(const char* balloonTexture, const char* balloonMesh);
+
 	// Gives Kart pointers for storing items it creates
-	void GetItemList(std::vector<GameObject*>* gameObjects,
-						std::vector<MovingItemObject*>* movingItemObjects);
+	/*void GetItemList(std::vector<GameObject*>* gameObjects,
+						std::vector<MovingItemObject*>* movingItemObjects);*/
+
+	void SetObjects(std::vector<GameObject*>* gameObjects,
+					std::vector<Kart*>* karts,
+					std::vector<Shell*>* shells,
+					std::vector<GameObject*>* otherItems);
+
+	void SetGameObjectIndex(int gameObjectIndex) { m_gameObjectIndex = gameObjectIndex; }
+	void SetItemBoxes(std::vector<ItemBox*>* itemBoxes) { m_itemBoxes = itemBoxes; }
+	int GetGameObjectIndex() { return m_gameObjectIndex; }
+	boolean GetInvincibility() { return m_invincible; }
 
 	// Kart executes this when an object is fired
 	// Constructs the item object and then adds it to the item lists
 	void ItemReleased();
+
+	void LifeLost();
 
 	void OnKartCollisionEnter(Kart* other);
 	void OnKartCollisionStay(Kart* other);
@@ -82,7 +116,10 @@ public:
 	void OnWallCollisionStay(Wall* other);
 	void OnWallCollisionExit(Wall* other);
 
-	void OnItemObjectCollisionEnter(MovingItemObject* other);
+	//void OnItemObjectCollisionEnter(MovingItemObject* other);
+
+	void OnShellCollisionEnter(Shell* other);
+	void OnOtherItemCollisionEnter();
 	
 };
 

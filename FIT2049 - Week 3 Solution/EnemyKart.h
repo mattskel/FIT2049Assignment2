@@ -10,26 +10,28 @@ class EnemyKart : public Kart
 {
 private:
 
-	const int WORLD_WIDTH = 200;
-	const int WORLD_DEPTH = 200;
+	const int WORLD_WIDTH = 299;
+	const int WORLD_DEPTH = 299;
 
 	Vector3 m_targetPosition;
-
-	/*
-	float m_moveSpeed;
-	float m_turnSpeed;
-
-	CBoundingBox m_boundingBox;
-	*/
-	
-
 	Vector3 GetRandomPosition();
+
+	boolean m_targetIsItemBox;
+	//ItemBox* m_previousItemBox;		// To make sure we don't return to the previous ItemBox
+	boolean m_chasingPlayer;	// Determine if we are chasing the player or not
+	Kart* m_playerKart;
+	int m_startNewTarget;	// Could get stuck in a loop, want to look for a new target after some time
 
 public:
 	EnemyKart(Mesh* mesh,
 		Shader* shader,
 		Texture* texture,
-		Vector3 position);
+		Vector3 position,
+		int flag);
+
+	//void SetItemBoxes(std::vector<ItemBox*>* itemBoxes) { m_itemBoxes = itemBoxes; }
+	void SetPlayerKart(Kart* playerKart) { m_playerKart = playerKart; }
+	void SetChasingPlayer() { m_chasingPlayer = true; }
 
 	void Update(float timestep);
 

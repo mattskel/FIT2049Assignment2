@@ -5,7 +5,7 @@
 
 class SpinningObject : public GameObject
 {
-private:
+protected:
 	float m_spinningSpeed;
 
 public:

@@ -65,6 +65,8 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Balloon.cpp" />
+    <ClCompile Include="Banana.cpp" />
     <ClCompile Include="Button.cpp" />
     <ClCompile Include="Camera.cpp" />
     <ClCompile Include="CollisionManager.cpp" />
@@ -73,6 +75,7 @@
     <ClCompile Include="EnemyKart.cpp" />
     <ClCompile Include="Game.cpp" />
     <ClCompile Include="GameObject.cpp" />
+    <ClCompile Include="GreenShell.cpp" />
     <ClCompile Include="InputController.cpp" />
     <ClCompile Include="ItemBox.cpp" />
     <ClCompile Include="Main.cpp" />
@@ -80,7 +83,9 @@
     <ClCompile Include="Kart.cpp" />
     <ClCompile Include="MovingItemObject.cpp" />
     <ClCompile Include="PhysicsObject.cpp" />
+    <ClCompile Include="RedShell.cpp" />
     <ClCompile Include="Shader.cpp" />
+    <ClCompile Include="Shell.cpp" />
     <ClCompile Include="SpinningObject.cpp" />
     <ClCompile Include="SurveillanceCamera.cpp" />
     <ClCompile Include="Texture.cpp" />
@@ -90,6 +95,8 @@
     <ClCompile Include="Window.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Balloon.h" />
+    <ClInclude Include="Banana.h" />
     <ClInclude Include="Button.h" />
     <ClInclude Include="Camera.h" />
     <ClInclude Include="CollisionManager.h" />
@@ -103,6 +110,7 @@
     <ClInclude Include="EnemyKart.h" />
     <ClInclude Include="Game.h" />
     <ClInclude Include="GameObject.h" />
+    <ClInclude Include="GreenShell.h" />
     <ClInclude Include="InputController.h" />
     <ClInclude Include="Item.h" />
     <ClInclude Include="ItemBox.h" />
@@ -111,7 +119,9 @@
     <ClInclude Include="Kart.h" />
     <ClInclude Include="MovingItemObject.h" />
     <ClInclude Include="PhysicsObject.h" />
+    <ClInclude Include="RedShell.h" />
     <ClInclude Include="Shader.h" />
+    <ClInclude Include="Shell.h" />
     <ClInclude Include="SpinningObject.h" />
     <ClInclude Include="StateMachine.h" />
     <ClInclude Include="StaticObject.h" />
