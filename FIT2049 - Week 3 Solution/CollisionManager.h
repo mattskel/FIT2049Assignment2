@@ -42,26 +42,20 @@ private:
 	// Potential to add more here
 	void KartToItemBox();
 
-	void KartToKart();
+	void KartToKart();	// Check if Karts are colliding
 
-	// Check collisions with the wall
-	void KartToWall();
+	
+	void KartToWall(); // Check collisions with the wall
 
-	void KartToItem();
+	void KartToItem();	// Check if a Kart is colliding with an Item
 
-	void KartToShell();
+	void KartToShell();	// Check if a Kart is colliding with a shell
 
-	void ShellToWall();
+	void ShellToWall();	// Check if a shell is colliding with a wall
 
 	void KartToOtherIterm();
 
 public:
-	/*
-	CollisionManager(std::vector<Kart*>* karts, 
-		std::vector<ItemBox*>* itemBoxes, 
-		std::vector<Wall*>* walls,
-		std::vector<MovingItemObject*>* movingItemObjects);
-	*/
 	CollisionManager(std::vector<Kart*>* karts,
 		std::vector<ItemBox*>* itemBoxes,
 		std::vector<Wall*>* walls,

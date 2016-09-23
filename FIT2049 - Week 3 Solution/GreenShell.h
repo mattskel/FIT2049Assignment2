@@ -1,3 +1,7 @@
+/*
+ * The greenshell object cannot change direction unless it hits a wall
+ */
+
 #ifndef GREEN_SHELL_H
 #define GREEN_SHELL_H
 

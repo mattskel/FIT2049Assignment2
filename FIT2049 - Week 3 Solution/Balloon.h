@@ -1,3 +1,9 @@
+/*
+ * Balloon Class
+ * Balloon follows each Kart
+ * When a Kart is hit the Balloon is lost and floats into the air
+ */
+
 #ifndef BALLOON_H
 #define BALLOON_H
 

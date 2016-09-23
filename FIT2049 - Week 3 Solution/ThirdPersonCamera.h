@@ -1,3 +1,10 @@
+/*
+ * The third person camera follows the player
+ * The object implements lerping to have a delayed chase
+ * As the player speeds away the camera falls behind
+ * as the player slows down the camera catches up
+ */
+
 #ifndef THIRD_PERSON_CAMERA_H
 #define THIRD_PERSON_CAMERA_H
 

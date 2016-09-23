@@ -1,3 +1,11 @@
+/*
+ * Shell object is used to represent the sell items in the game.
+ * A shell can be either a greenshell or a red shell
+ * the type of shell determines how it will move in the game
+ * When a shell collides with a wall it bounces off
+ * When a shell collides with a player it is destroyed
+ */
+
 #ifndef SHELL_H
 #define SHELL_H
 

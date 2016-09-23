@@ -22,16 +22,16 @@ Kart::Kart(Mesh* mesh,
 	m_boundingBox = CBoundingBox(GetPosition() + m_mesh->GetMin(),
 		GetPosition() + m_mesh->GetMax());
 
-	m_itemValue = std::rand() % 2;
-	m_itemReleased = -1;
+	m_itemValue = std::rand() % 5;
+	//m_itemReleased = -1;
 	m_livesRemaining = 3;
 
 	m_invincible = false;
 	m_invincibleStart = 0;
 }
 
+// Initialise the balloon list
 void Kart::InitBalloons() {
-	// Initialise the balloon list
 	float displacementX = -2.0;
 	float displacementY = 4.0;
 	float displacementZ = -3.0;
@@ -56,10 +56,6 @@ void Kart::Update(float timestep) {
 
 	if (m_input->GetKeyHold('A')) {
 		m_rotY -= m_turnSpeed * timestep;
-		// Need to see whay local forward is doing
-		//float myZFloat = localForward.z;
-		//float myXFloat = localForward.x;
-		//printf("%f, %f\n", myXFloat, myZFloat);
 	}
 
 	if (m_input->GetKeyHold('D'))
@@ -90,10 +86,11 @@ void Kart::Update(float timestep) {
 		balloonIndex += 1;
 	}
 
+	// If the kart is currently invincible check how long it has been invincible for
+	// If it is longer than some predetermined time stop invincibility mode
 	if (m_invincible) {
 		if (time(NULL) - m_invincibleStart > 5) {
 			m_moveSpeed = 4.0f;
-			//std::cout << "NOT INVINCIBLE" << std::endl;
 			m_invincible = false;
 		}
 	}
@@ -109,8 +106,9 @@ void Kart::Update(float timestep) {
 	}
 }
 
+// Returns the local forard of the kart
+// Use this for collisions
 Vector3 Kart::GetLocalForward() {
-
 	Vector3 worldForward = Vector3(0, 0, 1);
 	Matrix heading = Matrix::CreateRotationY(m_rotY);
 	Vector3 localForward = Vector3::TransformNormal(worldForward, heading);
@@ -131,12 +129,6 @@ void Kart::SetBalloonPointers(const char* balloonTexture, const char* balloonMes
 	m_balloonMesh = balloonMesh;
 }
 
-/*void Kart::GetItemList(std::vector<GameObject*>* gameObjects,
-	std::vector<MovingItemObject*>* movingItemObjects) {
-	m_gameObjects = gameObjects;
-	m_movingItemObjects = movingItemObjects;
-}*/
-
 void Kart::SetObjects(std::vector<GameObject*>* gameObjects,
 	std::vector<Kart*>* karts,
 	std::vector<Shell*>* shells,
@@ -147,11 +139,11 @@ void Kart::SetObjects(std::vector<GameObject*>* gameObjects,
 	m_otherItems = otherItems;
 }
 
-
+// Handles the release of items by a kart
 void Kart::ItemReleased() {
 	// First check that Kart has an item
 	if (m_itemValue >= 0) {
-
+		// Check what type of item was released
 		switch (m_itemValue) {
 		case 0:
 		{
@@ -161,7 +153,6 @@ void Kart::ItemReleased() {
 				GetPosition(),
 				GetLocalForward());
 			m_shells->push_back(greenShell);
-			//m_gameObjects->push_back(greenShell);
 			break;
 		}
 		case 1:
@@ -174,7 +165,6 @@ void Kart::ItemReleased() {
 				m_rotY,
 				m_karts);
 			m_shells->push_back(redShell);
-			//m_gameObjects->push_back(redShell);
 			break;
 		}
 		case 2:
@@ -184,7 +174,6 @@ void Kart::ItemReleased() {
 										Texture::GetTexture((*m_itemTextures)[m_itemValue]),
 										GetPosition() - 10.0 * GetLocalForward());
 			m_otherItems->push_back(banana);
-			//m_gameObjects->push_back(banana);
 			break;
 		}
 		case 3:
@@ -203,7 +192,6 @@ void Kart::ItemReleased() {
 			m_moveSpeed = 6.0f;
 			m_invincible = true;
 			m_invincibleStart = time(NULL);
-			//std::cout << "INVINCIBLE" << std::endl;
 		}
 		}
 		m_itemValue = -1;
@@ -218,7 +206,8 @@ void Kart::LifeLost() {
 	}
 }
 
-
+// Handles the collisions with other karts
+// A force is applied to kart indicative of the angle of collision
 void Kart::OnKartCollisionEnter(Kart* other) {
 
 	if (!m_invincible) {
@@ -242,11 +231,6 @@ void Kart::OnKartCollisionEnter(Kart* other) {
 		float collisionForce = (acceleration2.x * unitNormal.x + acceleration2.z * unitNormal.z);
 		Vector3 forceVector = Vector3(acceleration2.x * unitNormal.x, 0, acceleration2.z * unitNormal.z);
 
-		//ApplyForce(v1 + unitNormal);
-		//ApplyForce(v1 + unitNormal * collisionForce);
-		//ApplyForce(4.0 * forceVector);
-		// Change the 4.0 multiplier to be indicitive of speeds, eg average of both speeds
-		// Reduce the 4.0, but not ghosting
 		ApplyForce(4.0 * unitNormal);
 
 		if (other->GetInvincibility()) {
@@ -264,7 +248,7 @@ void Kart::OnKartCollisionExit(Kart* other) {
 
 
 void Kart::OnItemCollisionEnter(ItemBox* other) {
-	OutputDebugString("OnItemCollisionEnter\n");
+	//OutputDebugString("OnItemCollisionEnter\n");
 }
 void Kart::OnItemCollisionStay(ItemBox* other) {
 	//OutputDebugString("OnItemCollisionStay\n");
@@ -273,6 +257,8 @@ void Kart::OnItemCollisionExit(ItemBox* other) {
 	//OutputDebugString("OnItemCollisionExit\n");
 }
 
+// Handles collisions with the walls
+// When colliding with a wall the kart rebounds at the same angle
 void Kart::OnWallCollisionEnter(Wall* other) {
 	OutputDebugString("OnWallCollisionEnter\n");
 
@@ -282,13 +268,9 @@ void Kart::OnWallCollisionEnter(Wall* other) {
 	Vector3 velocity = GetVelocity();
 
 	Vector3 wallFace = other->GetLocalFace();
-	//float dotProd = localForward.x * wallFace.x +
-		//localForward.z * wallFace.z;
 	float dotProd = velocity.x * wallFace.x +
 					velocity.z * wallFace.z;
 
-	std::cout << dotProd << std::endl;
-	//ApplyForce(4.0 * (localForward - wallFace * 2 * dotProd));
 	ApplyForce(4.0 * (velocity - wallFace * 2 * dotProd));
 
 }
@@ -299,6 +281,8 @@ void Kart::OnWallCollisionExit(Wall* other) {
 	//OutputDebugString("OnWallCollisionExit\n");
 }
 
+// Handles collisions with shells
+// The kart rebounds based on the direction of the shell
 void Kart::OnShellCollisionEnter(Shell* other) {
 	if (!m_invincible) {
 		Vector3 localNormal = GetPosition() - other->GetPosition();
@@ -323,6 +307,8 @@ void Kart::OnShellCollisionEnter(Shell* other) {
 	}
 }
 
+// Collisions with items other than shells
+// Rebound off the item in the reverse direction
 void Kart::OnOtherItemCollisionEnter() {
 	if (!m_invincible) {
 		Vector3 velocity = GetVelocity();

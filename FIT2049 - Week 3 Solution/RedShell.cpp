@@ -34,7 +34,7 @@ RedShell::RedShell(Mesh* mesh,
 		}
 	}
 }
-
+// Updates the position to follow the target kart
 void RedShell::Update(float timestep) {
 
 	Vector3 targetPosition = m_targetKart->GetPosition();

@@ -54,7 +54,6 @@ bool Game::Initialise(Direct3D* renderer, InputController* input)
 
 	// TODO
 	// Need to give the collisions manager the moving items as well
-	//m_collisionManager = new CollisionManager(&m_karts, &m_itemBoxes, &m_walls, &m_movingItemObjects);
 	m_collisionManager = new CollisionManager(&m_karts, 
 											&m_itemBoxes, 
 											&m_walls, 
@@ -70,7 +69,8 @@ bool Game::Initialise(Direct3D* renderer, InputController* input)
 	kart->SetItemPointers(&m_itemTextures,
 						&m_itemMeshes,
 						m_texturedShader);
-	//kart->GetItemList(&m_gameObjects, &m_movingItemObjects);
+
+	// Give the kart pointers to all the lists it will need
 	kart->SetObjects(&m_gameObjects, &m_karts, &m_shells, &m_otherItems);
 	kart->SetItemBoxes(&m_itemBoxes);
 	kart->SetBalloonPointers("Balloon", "Balloon");
@@ -84,7 +84,6 @@ bool Game::Initialise(Direct3D* renderer, InputController* input)
 		ItemBox* itemBox = new ItemBox(Mesh::GetMesh("Box"),
 			m_texturedShader,
 			Texture::GetTexture("Box"),
-			/*Vector3(i * 30, 0, 0));*/
 			Vector3(MathsHelper::RandomRange(-290, 290), 0, MathsHelper::RandomRange(-290, 290)));
 		m_gameObjects.push_back(itemBox);
 		m_itemBoxes.push_back(itemBox);
@@ -92,7 +91,6 @@ bool Game::Initialise(Direct3D* renderer, InputController* input)
 
 	// Create the enemies
 	for (int i = 0; i < 4; i++) {
-
 		int flag = (i == 0) ? 1 : 0;
 		int textureIndex = i;
 		EnemyKart* enemy = new EnemyKart(Mesh::GetMesh("Kart"),
@@ -103,6 +101,7 @@ bool Game::Initialise(Direct3D* renderer, InputController* input)
 		if (flag == 1) {
 			enemy->SetPlayerKart(m_playerKart);
 		}
+		// Give the kart pointers to all the lists it will need
 		enemy->SetItemPointers(&m_itemTextures, &m_itemMeshes, m_texturedShader);
 		enemy->SetObjects(&m_gameObjects, &m_karts, &m_shells, &m_otherItems);
 		enemy->SetItemBoxes(&m_itemBoxes);
@@ -113,7 +112,6 @@ bool Game::Initialise(Direct3D* renderer, InputController* input)
 		m_karts.push_back(enemy);
 	}
 
-	//OutputDebugString(m_playerKart->GetItemValue());
 	int playerItemIndex = m_playerKart->GetItemValue();
 	m_currentItem = m_currentItemArray[playerItemIndex];
 	m_currentItemSprite = Texture::GetTexture(m_currentItem);
@@ -410,26 +408,27 @@ void Game::Gameplay_OnUpdate(float timestep)
 	m_collisionManager->CheckCollisions();
 
 	// Finds all the items that need to be removed from m_gameObjects
+	// remove the dead items so they don't get redrawn
 	int index = 0;
 	while (index < m_gameObjects.size()) {
 		int status = m_gameObjects[index]->GetStatus();
 		if (status == 0) {
-			//m_gameObjects[index]->~GameObject();
 			m_gameObjects.erase(m_gameObjects.begin() + index);
 		}
 		index++;
 	}
 
+	// checks if any karts need to be removed
 	index = 0;
 	while (index < m_karts.size()) {
 		int status = m_karts[index]->GetStatus();
 		if (status == 0) {
-			//m_gameObjects[index]->~GameObject();
 			m_karts.erase(m_karts.begin() + index);
 		}
 		index++;
 	}
 
+	// checks if any shells need to be removed
 	index = 0;
 	while (index < m_shells.size()) {
 		int status = m_shells[index]->GetStatus();
@@ -440,6 +439,7 @@ void Game::Gameplay_OnUpdate(float timestep)
 		index++;
 	}
 
+	// checks if any other items need to be removed from the game
 	index = 0;
 	while (index < m_otherItems.size()) {
 		int status = m_otherItems[index]->GetStatus();
@@ -452,6 +452,9 @@ void Game::Gameplay_OnUpdate(float timestep)
 
 	m_currentCam->Update(timestep);
 
+	// checks if the player kart is still alive, or
+	// checks if there is more than one player left
+	// If not the game is over
 	if (m_playerKart->GetStatus() == 0 || m_karts.size() <= 1) {
 		if (m_playerKart->GetStatus() == 0) {
 			m_playerWin = false;
@@ -478,13 +481,6 @@ void Game::Gameplay_OnRender()
 	for (unsigned int i = 0; i < m_otherItems.size(); i++) {
 		m_otherItems[i]->Render(m_renderer, m_currentCam);
 	}
-
-	/*
-	// Update all our game items
-	for (unsigned int i = 0; i < m_movingItemObjects.size(); i++) {
-		//m_movingItemObjects[i]->Render(m_renderer,m_currentCam);
-	}
-	*/
 	DrawGameUI();
 }
 
@@ -550,7 +546,7 @@ void Game::DrawGameUI()
 	// IMPORTANT
 	// Need to instantiate the new int
 	int playerItemIndex = m_playerKart->GetItemValue();
-	// Only draw if the player currentl has an item
+	// Only draw if the player currently has an item
 	if (playerItemIndex >= 0) {
 		m_currentItem = m_currentItemArray[playerItemIndex];
 		m_currentItemSprite = Texture::GetTexture(m_currentItem);

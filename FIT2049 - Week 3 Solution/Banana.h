@@ -1,3 +1,8 @@
+/*
+ * Banana Class
+ * Banana is an item dropped by one of the Karts
+ */
+
 #ifndef BANANA_H
 #define BANANA_H
 

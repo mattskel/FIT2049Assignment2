@@ -1,3 +1,10 @@
+/*
+ * EnemyKart Class
+ * EnemyKart either goes to a random position or follows the player
+ * When the enemy kart detects an item box nearby, the target position is changed to the ItemBox
+ *
+ */
+
 #ifndef ENEMY_KART_H
 #define ENEMY_KART_H
 
@@ -16,10 +23,9 @@ private:
 	Vector3 m_targetPosition;
 	Vector3 GetRandomPosition();
 
-	boolean m_targetIsItemBox;
-	//ItemBox* m_previousItemBox;		// To make sure we don't return to the previous ItemBox
+	boolean m_targetIsItemBox;	// Checks whether the current target is an item box
 	boolean m_chasingPlayer;	// Determine if we are chasing the player or not
-	Kart* m_playerKart;
+	Kart* m_playerKart;	// If EnemyKart is chasing the player uses this to determine position
 	int m_startNewTarget;	// Could get stuck in a loop, want to look for a new target after some time
 
 public:
@@ -29,14 +35,10 @@ public:
 		Vector3 position,
 		int flag);
 
-	//void SetItemBoxes(std::vector<ItemBox*>* itemBoxes) { m_itemBoxes = itemBoxes; }
 	void SetPlayerKart(Kart* playerKart) { m_playerKart = playerKart; }
 	void SetChasingPlayer() { m_chasingPlayer = true; }
 
 	void Update(float timestep);
-
-	//CBoundingBox GetBounds() { return m_boundingBox; }
-
 };
 
 #endif

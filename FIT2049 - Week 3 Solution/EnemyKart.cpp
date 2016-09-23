@@ -18,6 +18,7 @@ EnemyKart::EnemyKart(Mesh* mesh,
 	m_boundingBox = CBoundingBox(GetPosition() + m_mesh->GetMin(),
 		GetPosition() + m_mesh->GetMax());
 	
+	// Checks what kind of EnemyKart it is
 	if (flag == 0) {
 		m_chasingPlayer = false;
 		m_targetPosition = GetRandomPosition();
@@ -38,23 +39,28 @@ void EnemyKart::Update(float timestep) {
 		ItemReleased();
 	}
 
+	// The chasing karts need to be able to pick up items too
+	// IF statement to prevent chasing kart from always following the player
 	if (m_chasingPlayer && !m_targetIsItemBox) {
 		m_targetPosition = m_playerKart->GetPosition();
 	}
 
+	// Once the kart is close enough to the target position, a new position is generated
 	if (Vector3::DistanceSquared(GetPosition(), m_targetPosition) <= 5.0f) {
 		if (!m_chasingPlayer) {
 			m_targetPosition = GetRandomPosition();
-			m_startNewTarget = time(NULL);
+			m_startNewTarget = time(NULL);	
 		}
 		m_targetIsItemBox = false;
 	}
+	// Checks how long EnemyKart has been chasing a target
+	// If exceeds the predefined time, generate a new target
+	// This is to prevent Karts getting stuck in circles
 	else if (time(NULL) - m_startNewTarget > 20 && !m_chasingPlayer) {
 		m_targetPosition = GetRandomPosition();
 		m_startNewTarget = time(NULL);
 	}
 	else {
-
 		// First check if there are any item boxes near by
 		// If there are then we will reset m_targetPosition
 		// Only check if we are not already looking for an ItemBox
@@ -66,9 +72,11 @@ void EnemyKart::Update(float timestep) {
 				if (itemBox != m_previousItemBox) {
 					Vector3 itemBoxPosition = itemBox->GetPosition();
 					Vector3 itemBoxVector = itemBoxPosition - GetPosition();
-
 					//Get the vector length
 					float vectorLength = itemBoxVector.Length();
+					// Only if the item box is nearby reset m_targetPosition
+					// Also check it is greater than a min dist
+					// This is to prevent always returning to the same item box
 					if (vectorLength < maxDist && vectorLength > minDist) {
 						maxDist = vectorLength;
 						m_targetPosition = itemBoxPosition;
@@ -77,6 +85,8 @@ void EnemyKart::Update(float timestep) {
 				}
 			}
 		}
+		// maxDist has been reset
+		// Must have found an item box
 		if (maxDist < 50.0f) {
 			m_targetIsItemBox = true;
 		}
@@ -109,10 +119,10 @@ void EnemyKart::Update(float timestep) {
 		ApplyForce(localForward * m_moveSpeed * timestep);
 	}
 
+	// Check if the EnemyKart has invincibility
 	if (m_invincible) {
 		if (time(NULL) - m_invincibleStart > 5) {
 			m_moveSpeed = 4.0f;
-			//std::cout << "NOT INVINCIBLE" << std::endl;
 			m_invincible = false;
 		}
 	}
@@ -121,15 +131,15 @@ void EnemyKart::Update(float timestep) {
 	m_boundingBox.SetMin(GetPosition() + m_mesh->GetMin());
 	m_boundingBox.SetMax(GetPosition() + m_mesh->GetMax());
 
-	//std::cout << m_boundingBox.GetMax().x << " " << m_boundingBox.GetMax().y << " " << m_boundingBox.GetMax().z << std::endl;
-
 	PhysicsObject::Update(timestep);
 
+	// If all lives are gone set the status to 0
 	if (m_livesRemaining == 0) {
 		m_status = 0;
 	}
 }
 
+// Generates a random position in the playing area
 Vector3 EnemyKart::GetRandomPosition() {
 
 	return Vector3(MathsHelper::RandomRange(-WORLD_WIDTH, WORLD_WIDTH),0,
